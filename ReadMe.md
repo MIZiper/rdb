@@ -1,5 +1,7 @@
 # RDB
 
+![RDB Logo](./doc/logo.png)
+
 Result database, with managed scoped tag system.
 
 - Result database: data storage for various type resources, mainly for stats
