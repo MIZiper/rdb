@@ -1,0 +1,30 @@
+Project
+Project:Project1
+Project:Project2
+Project:Project2:SubProjectA
+
+Analysis:Analysis1
+Analysis:Analysis1:TableFormat
+Analysis:Analysis1:ValueFormat
+Analysis:SV
+Analysis:SV:StaticTable
+Analysis:SV:OrderSlices
+Analysis:FlowChart
+
+Status:Latest
+Status:Released
+Status:Dropped
+
+ResType:Report
+ResType:Report:Customer
+ResType:Report:Internal
+ResType:DocLink
+
+(Tag1 & Tag2) & (TagA | TagB) & (^TagII)
+
+// 在主系统中使用Tag管理资源
+// 选中资源集合后进行分析对比，此时从每个资源中独立获取Tag，并生成并初始化新的Manager，为独立分析服务
+
+// 注册Tag绑定Module
+// 得确保一个资源不会有多个绑定的Tag，因为Module可能会做批量处理，得确保资源唯一性
+// 或者说为资源添加Tag的时候，不会显示已经注册的Tag

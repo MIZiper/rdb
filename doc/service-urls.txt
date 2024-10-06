@@ -1,0 +1,15 @@
+rdb://tags
+rdb://tags/Scope1_Tag1
+
+rdb://resources
+rdb://resources/xxx-yy-zzz
+rdb://resources/xxx-yy-zzz/edit
+rdb://resources/xxx-yy-zzz/data/aaa-bb-ccc # image/table/...
+
+rdb://services/XYZ/[xxx-yy-zzz + yyy-zz-xxx + zzz-xx-yyy]
+rdb://services/XYZ # push data to such service
+rdb://services # registered types, and registered json schema
+
+rdb://admin/tag-management
+rdb://admin/resource-management # e.g. workflow approval
+rdb://admin/service-management # rdb://admin/module-management # import plugins
