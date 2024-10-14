@@ -1,4 +1,5 @@
 from flask import Flask
+import sqlite3
 
 app = Flask(__name__)
 
@@ -34,7 +35,7 @@ class Resource:
         return str(self)
 
     def __str__(self):
-        return f"Resouce<'{self.bound_object}'>"
+        return f"Resource<{self.bound_object}>"
     
 class TagNode:
     """TagNode hold related resources attached to the tag, and form a tree with parent/child relationship"""
@@ -70,7 +71,7 @@ class TagNode:
         return str(self)
         
     def __str__(self):
-        return f"Tag<'{self._recalc_full_tag_str()}'>"
+        return f"Tag<{self._recalc_full_tag_str()}>"
 
 class Manager:
     """The storage of all tags and resources"""
@@ -140,6 +141,96 @@ class Manager:
         # 3. move node and its subnodes
         pass
 
+    def tree_print(self, node: TagNode=None, depth: int=0):
+        if node is None:
+            node = self._root_node
+
+        print('-'*depth, node, node.resources)
+
+        for sub_node in node.sub_nodes.values():
+            self.tree_print(sub_node, depth=depth+1)
+
+
+
+class ResourceConnector:
+    def __init__(self, manager: Manager):
+        self.manager = manager
+
+    def load_resources(self):
+        ...
+
+    def save_resources(self):
+        ...
+
+class SQLiteResource(Resource):
+    def __init__(self, id: int, name: str, tags: str, conn: sqlite3.Connection):
+        super().__init__((id, name))
+
+        tag_list = tags.split("\n")
+        for tag_str in tag_list:
+            if tag_str!='':
+                self.tags.append(tag_str)
+
+        self.conn = conn
+
+    def __str__(self):
+        id, resource_name = self.bound_object
+        return f"SQLiteResource<{resource_name}>"
+    
+    def flush_update(self):
+        id, resource_name = self.bound_object
+        tags = '\n'.join(self.tags)
+
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            UPDATE resources
+            SET ResourceName = ?, Tags = ?
+            WHERE ID = ?
+        ''', (resource_name, tags, id))
+        self.conn.commit()
+
+class SQLiteResourceConnector(ResourceConnector):
+    def __init__(self, manager: Manager, db_path: str):
+        super().__init__(manager)
+
+        self.db_path = db_path
+        self.conn = sqlite3.connect(self.db_path)
+        self.cursor = self.conn.cursor()
+        self._create_table()
+
+    def _create_table(self):
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS resources (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                ResourceName TEXT NOT NULL,
+                Tags TEXT NOT NULL
+            )
+        ''')
+        self.conn.commit()
+
+    def load_resources(self):
+        self.cursor.execute('SELECT ID, ResourceName, Tags FROM resources')
+        rows = self.cursor.fetchall()
+        
+        for row in rows:
+            id, resource_name, tags = row
+            resource = SQLiteResource(id, resource_name, tags, self.conn)
+            self.manager.add_resource(resource)
+
+    def new_resource(self, name: str, tags: str) -> SQLiteResource:
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            INSERT INTO resources (ResourceName, Tags)
+            VALUES (?, ?)
+        ''', (name, tags))
+        self.conn.commit()
+        resource_id = cursor.lastrowid
+
+        return SQLiteResource(resource_id, name, tags, self.conn)
+    
+    def close(self):
+        self.conn.close()
+
 
 
 @app.route("/tags", defaults={'tag': ''}, methods=['GET']) # equal to `/tags/<empty>`
@@ -171,8 +262,12 @@ if __name__=="__main__":
     res1 = Resource("Project1 analysis1 resource")
     res1.tags.append("Project:Project1")
     res1.tags.append("Analysis:Analysis1")
-
     manager.add_resource(res1)
+
+    connector = SQLiteResourceConnector(manager, db_path='../storage/resources.db')
+    connector.load_resources()
+    res2 = connector.new_resource("Project2 analysis2 resource", "Project:Project2\nAnalysis:Analysis2")
+    manager.add_resource(res2)
 
     app.run(host="localhost", port="5428", debug=True)
 
