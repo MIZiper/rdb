@@ -5,6 +5,7 @@ app = Flask(__name__)
 TAG_SPLITTER = ":"
 
 
+
 # class Tag: # #Type:SubType:..:Tag
 #     pass
 class TagStr(str): # only str of node, no ":"
@@ -28,6 +29,12 @@ class Resource:
 
     def flush_update(self):
         ...
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        return f"Resouce<'{self.bound_object}'>"
     
 class TagNode:
     """TagNode hold related resources attached to the tag, and form a tree with parent/child relationship"""
@@ -58,6 +65,12 @@ class TagNode:
             return self.tag_str
         else:
             return self.parent_node._recalc_full_tag_str()+TAG_SPLITTER+self.tag_str
+        
+    def __repr__(self):
+        return str(self)
+        
+    def __str__(self):
+        return f"Tag<'{self._recalc_full_tag_str()}'>"
 
 class Manager:
     """The storage of all tags and resources"""
@@ -98,8 +111,26 @@ class Manager:
 
     def filter_resources(self, tags: list[TagStrFull]) -> list[Resource]:
         # TODO: extends to multiple operands
-        # use set {}
-        pass
+        final_res = None
+        for full_tag_str in tags:
+            tag_node = self._tag_map.get(full_tag_str)
+            if tag_node is None:
+                sub_res = set()
+
+                final_res = None
+                break # since the intersection will always be empty
+            else:
+                sub_res = set(tag_node.collect_resources())
+
+            if final_res is None:
+                final_res = sub_res
+            else:
+                final_res.intersection_update(sub_res)
+
+        if final_res is None:
+            return []
+        else:
+            return list(final_res)
 
     def rename_tag(self, from_tag: TagStrFull, to_tag: TagStrFull): # also for tag-duplication case, e.g. hello == hi, created by different users
         # need to lock
@@ -132,14 +163,16 @@ def show_resource(resource: str):
 def add_resource_with_tags(resource: str):
     pass
 
+
+
 if __name__=="__main__":
     manager = Manager()
 
     res1 = Resource("Project1 analysis1 resource")
-    manager.add_resource(res1, [
-        "Project:Project1",
-        "Analysis:Analysis1"
-    ])
+    res1.tags.append("Project:Project1")
+    res1.tags.append("Analysis:Analysis1")
+
+    manager.add_resource(res1)
 
     app.run(host="localhost", port="5428", debug=True)
 
