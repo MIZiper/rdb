@@ -29,14 +29,6 @@ class Resource:
     def tags_str(self):
         return TAG_SPLITTER.join(self.tags)
 
-    def update_tags(self, from_tags: list[TagStrFull], to_tags: list[TagStrFull]):
-        pass
-
-        # when to sync to save the changes?
-
-    def update_content(self):
-        ... # needed?
-
     def flush_update(self):
         ...
 
@@ -141,6 +133,29 @@ class Manager:
             return []
         else:
             return list(final_res)
+        
+    def update_resource_tags(self, resource: Resource, tags: list[TagStrFull]):
+        from_set = set(resource.tags)
+        to_set = set(tags)
+
+        remove_from = from_set - to_set
+        add_to = to_set - from_set
+
+        if not remove_from and not add_to: # same
+            return
+
+        for from_tag in remove_from:
+            tag_node = self._tag_map.get(from_tag)
+            if tag_node is None:
+                continue
+            tag_node.resources.remove(resource)
+
+        for to_tag in add_to:
+            tag_node = self.get_or_create_tag(to_tag)
+            tag_node.resources.add(resource)
+
+        resource.tags = tags.copy()
+        resource.flush_update()
 
     def rename_tag(self, from_tag: TagStrFull, to_tag: TagStrFull): # also for tag-duplication case, e.g. hello == hi, created by different users
         # need to lock
