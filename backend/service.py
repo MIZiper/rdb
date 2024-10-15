@@ -1,9 +1,13 @@
 from flask import Flask
 import sqlite3
+import os
+from os import path
+from uuid import uuid4
 
 app = Flask(__name__)
 
-TAG_SPLITTER = ":"
+TAG_HIER = ":"
+TAG_SPLITTER = ";;"
 
 
 
@@ -16,9 +20,14 @@ class TagStrFull(str): # full tag str, L1:L2:...:Ln
 
 class Resource:
     """The minimum representor of a resource"""
-    def __init__(self, bound_object=None):
+    def __init__(self, name: str, tags_str: str=None, bound_object=None):
+        self.name = name
+        self.tags: list[TagStrFull] = [] if tags_str is None or tags_str=='' else tags_str.split(TAG_SPLITTER) # use list[str] or list[object]?
         self.bound_object = bound_object
-        self.tags: list[TagStrFull] = [] # use list[str] or list[object]?
+
+    @property
+    def tags_str(self):
+        return TAG_SPLITTER.join(self.tags)
 
     def update_tags(self, from_tags: list[TagStrFull], to_tags: list[TagStrFull]):
         pass
@@ -35,7 +44,7 @@ class Resource:
         return str(self)
 
     def __str__(self):
-        return f"Resource<{self.bound_object}>"
+        return f"Resource<{self.name}>"
     
 class TagNode:
     """TagNode hold related resources attached to the tag, and form a tree with parent/child relationship"""
@@ -65,7 +74,7 @@ class TagNode:
         if self.parent_node is None:
             return self.tag_str
         else:
-            return self.parent_node._recalc_full_tag_str()+TAG_SPLITTER+self.tag_str
+            return self.parent_node._recalc_full_tag_str()+TAG_HIER+self.tag_str
         
     def __repr__(self):
         return str(self)
@@ -83,8 +92,8 @@ class Manager:
     def get_or_create_tag(self, full_tag_str: TagStrFull) -> "TagNode":
         tag_node = self._tag_map.get(full_tag_str)
         if tag_node is None:
-            if TAG_SPLITTER in full_tag_str:
-                parent_tag_str, tag_str = full_tag_str.rsplit(TAG_SPLITTER, 1)
+            if TAG_HIER in full_tag_str:
+                parent_tag_str, tag_str = full_tag_str.rsplit(TAG_HIER, 1)
                 # if tag_str==""
                 parent_node = self.get_or_create_tag(parent_tag_str)
                 tag_node = TagNode(tag_str, parent_node=parent_node)
@@ -145,7 +154,7 @@ class Manager:
         if node is None:
             node = self._root_node
 
-        print('-'*depth, node, node.resources)
+        print('-'*depth, node, node.resources or '')
 
         for sub_node in node.sub_nodes.values():
             self.tree_print(sub_node, depth=depth+1)
@@ -162,31 +171,26 @@ class ResourceConnector:
     def save_resources(self):
         ...
 
+    def new_resource(self, name: str, tags_str: str) -> Resource:
+        ...
+
 class SQLiteResource(Resource):
-    def __init__(self, id: int, name: str, tags: str, conn: sqlite3.Connection):
-        super().__init__((id, name))
+    def __init__(self, id: int, name: str, tags_str: str, conn: sqlite3.Connection):
+        super().__init__(name=name, tags_str=tags_str)
 
-        tag_list = tags.split("\n")
-        for tag_str in tag_list:
-            if tag_str!='':
-                self.tags.append(tag_str)
-
+        self.id = id
         self.conn = conn
 
     def __str__(self):
-        id, resource_name = self.bound_object
-        return f"SQLiteResource<{resource_name}>"
+        return f"SQLiteResource<{self.name} @ {self.id}>"
     
     def flush_update(self):
-        id, resource_name = self.bound_object
-        tags = '\n'.join(self.tags)
-
         cursor = self.conn.cursor()
         cursor.execute('''
             UPDATE resources
             SET ResourceName = ?, Tags = ?
             WHERE ID = ?
-        ''', (resource_name, tags, id))
+        ''', (self.name, self.tags_str, self.id))
         self.conn.commit()
 
 class SQLiteResourceConnector(ResourceConnector):
@@ -213,23 +217,57 @@ class SQLiteResourceConnector(ResourceConnector):
         rows = self.cursor.fetchall()
         
         for row in rows:
-            id, resource_name, tags = row
-            resource = SQLiteResource(id, resource_name, tags, self.conn)
+            id, resource_name, tags_str = row
+            resource = SQLiteResource(id, resource_name, tags_str, self.conn)
             self.manager.add_resource(resource)
 
-    def new_resource(self, name: str, tags: str) -> SQLiteResource:
+    def new_resource(self, name: str, tags_str: str) -> SQLiteResource:
         cursor = self.conn.cursor()
         cursor.execute('''
             INSERT INTO resources (ResourceName, Tags)
             VALUES (?, ?)
-        ''', (name, tags))
+        ''', (name, tags_str))
         self.conn.commit()
         resource_id = cursor.lastrowid
 
-        return SQLiteResource(resource_id, name, tags, self.conn)
+        return SQLiteResource(resource_id, name, tags_str, self.conn)
     
     def close(self):
         self.conn.close()
+
+class FileResource(Resource):
+    def __init__(self, uuid: str, name: str, tags_str: str, storage_dir: str):
+        super().__init__(name=name, tags_str=tags_str)
+
+        self.uuid = uuid
+        self.storage_dir = storage_dir
+
+    def __str__(self):
+        return f"FileResource<{self.name} @ {self.uuid}>"
+
+    def flush_update(self):
+        with open(path.join(self.storage_dir, self.uuid), mode='w') as fp: # caution 'w' truncate, change it if more content inside the file
+            fp.write(self.name+"\n")
+            fp.write(self.tags_str+"\n")
+
+class FileResourceConnector(ResourceConnector):
+    def __init__(self, manager: Manager, storage_dir: str):
+        super().__init__(manager)
+        self.storage_dir = storage_dir
+
+    def load_resources(self):
+        for f in os.listdir(self.storage_dir):
+            with open(path.join(self.storage_dir, f), mode='r') as fp:
+                name = fp.readline().strip()
+                tags_str = fp.readline().strip()
+                resource = FileResource(f, name, tags_str, self.storage_dir)
+                self.manager.add_resource(resource)
+    
+    def new_resource(self, name: str, tags_str: str) -> FileResource:
+        uuid = uuid4().hex
+        resource = FileResource(uuid, name, tags_str, self.storage_dir)
+        resource.flush_update()
+        return resource
 
 
 
@@ -266,7 +304,7 @@ if __name__=="__main__":
 
     connector = SQLiteResourceConnector(manager, db_path='../storage/resources.db')
     connector.load_resources()
-    res2 = connector.new_resource("Project2 analysis2 resource", "Project:Project2\nAnalysis:Analysis2")
+    res2 = connector.new_resource("Project2 analysis2 resource", "Project:Project2;;Analysis:Analysis2")
     manager.add_resource(res2)
 
     app.run(host="localhost", port="5428", debug=True)
