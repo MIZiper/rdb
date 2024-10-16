@@ -50,6 +50,8 @@ class TagNode:
     def merge_from(self, ano_node: "TagNode"):
         # NOTE: the resources.tags from `ano_node` and its sub_nodes should be correctly mantained elsewhere
 
+        if self is ano_node:
+            return
         # assert ano_node.tag_str == self.tag_str
         self.resources.update(ano_node.resources)
         for sub_node in ano_node.sub_nodes.values():
@@ -58,6 +60,7 @@ class TagNode:
     def add_subnode(self, tag_node: "TagNode"):
         if (orig_node := self.sub_nodes.get(tag_node.tag_str)) is None: # simply add it, no conflict
             self.sub_nodes[tag_node.tag_str] = tag_node
+            tag_node.parent_node = self
         else:
             orig_node.merge_from(tag_node)
 
@@ -88,7 +91,7 @@ class TagNode:
 class Manager:
     """The storage of all tags and resources"""
     def __init__(self) -> None:
-        self._root_node = TagNode(tag_str='')
+        self._root_node = TagNode(tag_str='[VirtualRoot]')
         self._tag_map: dict[TagStrFull, TagNode] = {'': self._root_node}
         # self._lock # when renaming tag
     
@@ -103,7 +106,8 @@ class Manager:
                 parent_node.add_subnode(tag_node)
             else:
                 tag_node = TagNode(full_tag_str)
-                self._root_node.add_subnode(tag_node) # so root has subnodes, but 1st layer nodes has not parent
+                self._root_node.add_subnode(tag_node)
+                tag_node.parent_node = None # so root has subnodes, but 1st layer nodes has not parent
             self._tag_map[full_tag_str] = tag_node
         return tag_node
 
@@ -186,6 +190,13 @@ class Manager:
             ]
             # resource.flush_update()?
 
+        # 3. move node and its subnodes
+        parent_node = from_node.parent_node or self._root_node
+        node = parent_node.sub_nodes.pop(from_node.tag_str) # remove from parent
+        assert node is from_node
+        to_node = self.get_or_create_tag(to_tag)
+        to_node.merge_from(from_node)
+
         # 2. change the tag_map keys
         for key in list(tag_map.keys()):
             if not key.startswith(from_tag):
@@ -194,21 +205,16 @@ class Manager:
             node = tag_map.pop(key)
             new_key = key.replace(from_tag, to_tag, 1)
             if new_key in tag_map:
-                pass # tag_map[new_key] will `merge_from` node in next step
+                # assert node._recalc_full_tag_str() == key
+                pass # tag_map[new_key] `merge_from` node in step 3
             else:
+                # assert node._recalc_full_tag_str() == new_key # already rebound
                 tag_map[new_key] = node
             # is there a way to combine step 2 & 3, both steps need to handle already-existed case
 
             # one optimization can be:
             # - run step 3 first, and get a list of path-es need updated/merged
             # - no need to iterate full keys, just update the affected ones
-
-        # 3. move node and its subnodes
-        parent_node = from_node.parent_node or self._root_node
-        node = parent_node.sub_nodes.pop(from_node.tag_str) # remove from parent
-        assert node is from_node
-        to_node = self.get_or_create_tag(to_tag)
-        to_node.merge_from(from_node)
 
     def tree_print(self, node: TagNode=None, depth: int=0):
         if node is None:
