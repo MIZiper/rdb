@@ -47,8 +47,19 @@ class TagNode:
         self.parent_node: TagNode = parent_node
         self.sub_nodes: dict[TagStr, TagNode] = {}
 
+    def merge_from(self, ano_node: "TagNode"):
+        # NOTE: the resources.tags from `ano_node` and its sub_nodes should be correctly mantained elsewhere
+
+        # assert ano_node.tag_str == self.tag_str
+        self.resources.update(ano_node.resources)
+        for sub_node in ano_node.sub_nodes.values():
+            self.add_subnode(sub_node)
+
     def add_subnode(self, tag_node: "TagNode"):
-        self.sub_nodes[tag_node.tag_str] = tag_node # what if already exist, and the resources are not merged
+        if (orig_node := self.sub_nodes.get(tag_node.tag_str)) is None: # simply add it, no conflict
+            self.sub_nodes[tag_node.tag_str] = tag_node
+        else:
+            orig_node.merge_from(tag_node)
 
     def collect_resources(self, collection: list[Resource]=None):
         if collection is None:
@@ -160,10 +171,44 @@ class Manager:
     def rename_tag(self, from_tag: TagStrFull, to_tag: TagStrFull): # also for tag-duplication case, e.g. hello == hi, created by different users
         # need to lock
 
+        tag_map = self._tag_map
+
+        from_node = tag_map.get(from_tag)
+        if from_node is None or from_tag==to_tag or not from_tag or not to_tag:
+            return
+        
         # 1. change the tagstr for resources
-        # 2. change the _tag_map keys
+        resources_2b_updated: set[Resource] = set(from_node.collect_resources())
+        for resource in resources_2b_updated:
+            resource.tags = [
+                tag_str.replace(from_tag, to_tag, 1) if tag_str.startswith(from_tag) else tag_str
+                for tag_str in resource.tags
+            ]
+            # resource.flush_update()?
+
+        # 2. change the tag_map keys
+        for key in list(tag_map.keys()):
+            if not key.startswith(from_tag):
+                continue
+            
+            node = tag_map.pop(key)
+            new_key = key.replace(from_tag, to_tag, 1)
+            if new_key in tag_map:
+                pass # tag_map[new_key] will `merge_from` node in next step
+            else:
+                tag_map[new_key] = node
+            # is there a way to combine step 2 & 3, both steps need to handle already-existed case
+
+            # one optimization can be:
+            # - run step 3 first, and get a list of path-es need updated/merged
+            # - no need to iterate full keys, just update the affected ones
+
         # 3. move node and its subnodes
-        pass
+        parent_node = from_node.parent_node or self._root_node
+        node = parent_node.sub_nodes.pop(from_node.tag_str) # remove from parent
+        assert node is from_node
+        to_node = self.get_or_create_tag(to_tag)
+        to_node.merge_from(from_node)
 
     def tree_print(self, node: TagNode=None, depth: int=0):
         if node is None:
