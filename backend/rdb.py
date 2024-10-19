@@ -1,3 +1,6 @@
+"""RDB implementation based on RTM
+"""
+
 from datetime import datetime
 
 class ResultFile:
