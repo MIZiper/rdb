@@ -1,7 +1,8 @@
 from flask import Flask
-from rtm import TagStr, TagStrFull
+from rtm import TagStr, TagStrFull, Manager, Resource
 
 app = Flask(__name__)
+manager = Manager()
 
 
 
@@ -22,17 +23,15 @@ def show_resource_list(): # order by added date
 def show_resource(resource: str):
     pass
 
-@app.route("/resources/<string:resource>", methods=['POST'])
-def add_resource_with_tags(resource: str):
+@app.route("/resources", methods=['POST'])
+def add_resource_with_tags():
     pass
 
 
 
 if __name__=="__main__":
-    from rtm import Manager, Resource, SQLiteResourceConnector
+    from rtm import SQLiteResourceConnector
     
-    manager = Manager()
-
     res1 = Resource("Project1 analysis1 resource")
     res1.tags.append("Project:Project1")
     res1.tags.append("Analysis:Analysis1")
