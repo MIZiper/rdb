@@ -11,6 +11,8 @@ Result database, with managed scoped tag system.
 
 ### Scoped tag
 
+Scoped tag is under user's management, and can be used to filter resources.
+
 ### Result data
 
 ## Concepts

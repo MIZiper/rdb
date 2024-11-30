@@ -9,7 +9,7 @@ manager = Manager()
 @app.route("/tags", defaults={'tag': ''}, methods=['GET']) # equal to `/tags/<empty>`
 @app.route("/tags/<string:tag>", methods=['GET']) # list-sub
 def list_tags_of(tag: TagStrFull):
-    pass
+    manager.get_tags_of(tag)
 
 @app.route("/tags", methods=['POST']) # create
 def create_tag():
