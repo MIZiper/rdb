@@ -38,6 +38,13 @@ class Resource:
     def __str__(self):
         return f"Resource<{self.name}>"
     
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'tags': self.tags,
+            'bound_object': self.bound_object,
+        }
+    
 class TagNode:
     """TagNode hold related resources attached to the tag, and form a tree with parent/child relationship"""
     def __init__(self, tag_str: TagStr, parent_node: "TagNode"=None):
@@ -122,9 +129,9 @@ class Manager:
             tag_node.resources.add(resource)
 
     # @cache
-    def get_resources(self, ) -> list[Resource]:
+    def get_resources(self) -> list[Resource]:
         # to save the info (e.g., save as json if tags are not stored in resource itself)
-        pass
+        return self._root_node.collect_resources()
 
     def filter_resources(self, tags: list[TagStrFull]) -> list[Resource]:
         # TODO: extends to multiple operands
