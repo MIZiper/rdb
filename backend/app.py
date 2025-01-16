@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from rtm import TagStr, TagStrFull, Manager, Resource
+from rtm import TagStr, TagStrFull, Manager, Resource, TAG_SPLITTER
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -23,7 +23,7 @@ def create_tag():
 
 @app.route("/resources", methods=['GET'])
 def show_resource_list(): # order by added date
-    resources = manager.get_resources()
+    resources = manager.get_all_resources()
     return jsonify([resource.to_dict() for resource in resources])
 
 @app.route("/resources/<string:resource>", methods=['GET'])
@@ -51,18 +51,25 @@ def add_resource_with_tags():
 
 
 if __name__=="__main__":
-    from rtm import SQLiteResourceConnector
+    from rdb import SQLiteResourceConnector
+    from os import path
+    import random
     
-    res1 = Resource("Project1 analysis1 resource")
-    res1.tags.append("Project:Project1")
-    res1.tags.append("Analysis:Analysis1")
-    manager.add_resource(res1)
-
-    connector = SQLiteResourceConnector(manager, db_path='../storage/resources.db')
-    connector.load_resources()
-    res2 = connector.new_resource("Project2 analysis2 resource", "Project:Project2;;Analysis:Analysis2")
-    manager.add_resource(res2)
+    if not path.exists("../storage/resources.db"):
+        connector = SQLiteResourceConnector(manager, db_path='../storage/resources.db')
+        tags = [
+            'cultivation','cultivation:ball','cultivation:apple','conscience','conscience:fry','conscience:fry:tend','conscience:nest',
+            'build','build:disappoint','build:disappoint:tighten','build:disappoint:tighten:disappearance','build:disappoint:fancy',
+            'build:disappoint:fancy:tend','build:disappoint:fancy:tend:conscience','build:disappoint:fancy:tend:conscience:relation',
+            'build:disappoint:fancy:tend:conscience:winter','build:disappoint:fancy:tend:conscience:winter:and','build:disappoint:disappoint',
+            'build:bottle','build:luck','build:nursery','build:disappearance','disappearance','proof','proof:fruit','proof:paste',
+            'proof:paste:nest','proof:paste:cultivation','proof:paste:and','proof:respect'
+        ]
+        
+        for i in range(15):
+            l = random.randint(1, len(tags))
+            t = random.choices(tags, k=l)
+            res = connector.new_resource(f"Resource {i}", TAG_SPLITTER.join(t))
+            manager.add_resource(res)
 
     app.run(host="localhost", port="5428", debug=True)
-
-    # database for result_stat/various_resource/data_info/...
