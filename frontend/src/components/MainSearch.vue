@@ -1,42 +1,28 @@
 <template>
   <v-container>
-    <v-autocomplete
-      v-model="searchQuery"
-      :items="allTags"
-      label="Search"
-      prepend-icon="mdi-magnify"
-      clearable
-      multiple
-      chips
-    ></v-autocomplete>
+    <v-autocomplete v-model="searchQuery" :items="allTags" label="Search" prepend-icon="mdi-magnify" clearable multiple
+      chips></v-autocomplete>
     <v-row justify="space-between" align="center">
       <v-col>
         <p>{{ results.length }} results found</p>
       </v-col>
       <v-col cols="auto" class="d-flex align-center">
-        <v-pagination
-          v-model="page"
-          :length="pageCount"
-          :total-visible="5"
-        ></v-pagination>
+        <v-pagination v-model="page" :length="pageCount" :total-visible="5"></v-pagination>
         <v-btn icon @click="toggleSortOrder" class="ml-3">
           <v-icon>
             {{
               sortOrder === 'None'
                 ? 'mdi-sort'
                 : sortOrder === 'Descending'
-                ? 'mdi-arrow-down'
-                : 'mdi-arrow-up'
+                  ? 'mdi-arrow-down'
+                  : 'mdi-arrow-up'
             }}
           </v-icon>
         </v-btn>
       </v-col>
     </v-row>
     <v-list>
-      <v-list-item
-        v-for="(result, index) in paginatedResults"
-        :key="index"
-      >
+      <v-list-item v-for="(result, index) in paginatedResults" :key="index">
         <v-list-item-content>
           <v-row justify="space-between" align="center">
             <v-col>
@@ -48,24 +34,19 @@
             </v-col>
           </v-row>
           <v-list-item-subtitle class="ma-3">{{ result.description }}</v-list-item-subtitle>
-          <v-chip-group>
-            <v-chip
-              v-for="(tag, tagIndex) in result.tags"
-              :key="tagIndex"
-            >
-              {{ tag }}
-            </v-chip>
-          </v-chip-group>
+          <v-row class="ma-0">
+            <a v-for="(tag, tagIndex) in result.tags" :key="tagIndex" :href="`/search?tag=${tag}`" target="_blank">
+              <v-chip :color="getTagColor(tag)" class="ma-1">
+                {{ tag }}
+              </v-chip>
+            </a>
+          </v-row>
         </v-list-item-content>
         <v-divider v-if="index < paginatedResults.length - 1"></v-divider>
       </v-list-item>
     </v-list>
     <v-row justify="end">
-      <v-pagination
-        v-model="page"
-        :length="pageCount"
-        :total-visible="5"
-      ></v-pagination>
+      <v-pagination v-model="page" :length="pageCount" :total-visible="5"></v-pagination>
     </v-row>
   </v-container>
 </template>
@@ -162,7 +143,37 @@ export default {
         this.sortOrder = 'Descending';
         this.results.sort((a, b) => new Date(b.modifiedDate) - new Date(a.modifiedDate));
       }
+    },
+    async fetchResources() {
+      try {
+        const response = await fetch('http://localhost:5428/resources');
+        const data = await response.json();
+        this.results = data.map(resource => ({
+          title: resource.name,
+          description: resource.description || '',
+          tags: resource.tags,
+          modifiedDate: resource.modifiedDate
+        }));
+      } catch (error) {
+        console.error('Error fetching resources:', error);
+      }
+    },
+    getTagColor(tag) {
+      const tagCategory = tag.split(':')[0];
+      const hash = Math.abs(this.hashString(tagCategory));
+      const colors = ['red', 'pink', 'purple', 'deep-purple', 'indigo', 'blue', 'light-blue', 'cyan', 'teal', 'green', 'light-green', 'lime', 'orange', 'deep-orange', 'brown', 'grey', 'blue-grey'];
+      return colors[hash % colors.length];
+    },
+    hashString(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return hash;
     }
+  },
+  created() {
+    this.fetchResources();
   },
   computed: {
     pageCount() {

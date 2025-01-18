@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from rtm import TagStr, TagStrFull, Manager, Resource, TAG_SPLITTER
 from flask_cors import CORS
+import atexit
 
 app = Flask(__name__)
 CORS(app)
@@ -55,8 +56,9 @@ if __name__=="__main__":
     from os import path
     import random
     
-    if not path.exists("../storage/resources.db"):
-        connector = SQLiteResourceConnector(manager, db_path='../storage/resources.db')
+    db_path = path.join(path.dirname(__file__), '../storage/resources.db')
+    if not path.exists(db_path):
+        connector = SQLiteResourceConnector(manager, db_path)
         tags = [
             'cultivation','cultivation:ball','cultivation:apple','conscience','conscience:fry','conscience:fry:tend','conscience:nest',
             'build','build:disappoint','build:disappoint:tighten','build:disappoint:tighten:disappearance','build:disappoint:fancy',
@@ -67,9 +69,13 @@ if __name__=="__main__":
         ]
         
         for i in range(15):
-            l = random.randint(1, len(tags))
+            l = random.randint(1, 5)
             t = random.choices(tags, k=l)
             res = connector.new_resource(f"Resource {i}", TAG_SPLITTER.join(t))
             manager.add_resource(res)
+    else:
+        connector = SQLiteResourceConnector(manager, db_path)
+        connector.load_resources()
 
+    atexit.register(connector.close)
     app.run(host="localhost", port="5428", debug=True)
