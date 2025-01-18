@@ -1,11 +1,14 @@
 <template>
   <v-app>
     <v-main>
-      <MainSearch />
+      <SearchBar />
     </v-main>
   </v-app>
 </template>
 
 <script setup lang="ts">
+
+import SearchBar from './components/SearchBar.vue';
+
   //
 </script>

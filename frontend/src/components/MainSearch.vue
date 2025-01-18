@@ -22,7 +22,7 @@
       </v-col>
     </v-row>
     <v-list>
-      <v-list-item v-for="(result, index) in paginatedResults" :key="index">
+      <v-list-item v-for="(result, index) in paginatedResults" :key="index" class="mb-2">
         <v-list-item-content>
           <v-row justify="space-between" align="center">
             <v-col>
@@ -36,13 +36,12 @@
           <v-list-item-subtitle class="ma-3">{{ result.description }}</v-list-item-subtitle>
           <v-row class="ma-0">
             <a v-for="(tag, tagIndex) in result.tags" :key="tagIndex" :href="`/search?tag=${tag}`" target="_blank">
-              <v-chip :color="getTagColor(tag)" class="ma-1">
+              <v-chip :color="getTagColor(tag)" class="mr-1 mb-1">
                 {{ tag }}
               </v-chip>
             </a>
           </v-row>
         </v-list-item-content>
-        <v-divider v-if="index < paginatedResults.length - 1"></v-divider>
       </v-list-item>
     </v-list>
     <v-row justify="end">
@@ -187,3 +186,10 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.v-list-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+</style>

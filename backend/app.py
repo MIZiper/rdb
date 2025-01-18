@@ -10,6 +10,7 @@ manager = Manager()
 
 
 @app.route("/tags", defaults={'tag': ''}, methods=['GET']) # equal to `/tags/<empty>`
+@app.route("/tags/", defaults={'tag': ''}, methods=['GET'])
 @app.route("/tags/<string:tag>", methods=['GET']) # list-sub
 def list_tags_of(tag: TagStrFull):
     return manager.get_tags_of(tag)

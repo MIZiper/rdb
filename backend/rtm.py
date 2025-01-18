@@ -116,6 +116,8 @@ class Manager:
     # @cache
     def get_tags_of(self, full_tag_str:TagStrFull="") -> list[str]:
         # only return 1 layer
+        if full_tag_str not in self._tag_map:
+            return []
         return [tag_node_str for tag_node_str in self._tag_map[full_tag_str].sub_nodes]
 
     def add_resource(self, resource: Resource):
