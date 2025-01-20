@@ -8,6 +8,7 @@
 
 <script setup lang="ts">
 
+import MainSearch from './components/MainSearch.vue';
 import SearchBar from './components/SearchBar.vue';
 
   //

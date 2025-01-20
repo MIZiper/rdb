@@ -1,19 +1,20 @@
 <template>
   <div>
-    <v-row class="ma-0">
+    <v-row class="ma-0" style="min-height: 40px;">
       <v-chip v-for="(tag, index) in selectedTags" :key="index" closable>
         {{ tag }}
       </v-chip>
     </v-row>
-    <v-text-field v-model="search" label="Add tag" clearable @keydown.enter="addTag" @input="onChange(search)"
-      @focus="onFocus" ref="searchField"></v-text-field>
-    <v-menu v-model="menu" :close-on-content-click="false" :offset-y="true">
-      <v-list>
-        <v-list-item v-for="(tag, index) in filteredTags" :key="index" @click="selectTag(tag)">
-          <v-list-item-title>{{ tag }}</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-menu>
+    <v-text-field ref="searchField" v-model="search" label="Add tag" @keydown.enter="addTag" @focus="onFocus"
+      @input="onChange(search)" :loading="loading">
+      <v-menu activator="parent" :close-on-content-click="false">
+        <v-list>
+          <v-list-item v-for="(tag, index) in filteredTags" :key="index" @click="selectTag(tag)">
+            <v-list-item-title>{{ tag }}</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </v-text-field>
   </div>
 </template>
 
@@ -24,64 +25,70 @@ export default {
   data() {
     return {
       search: '',
-      currentScopeTags: [],
+      childrenTags: [],
       filteredTags: [],
       selectedTags: [],
       loading: false,
-      menu: false,
+      tagCache: {},
     };
   },
   methods: {
     async fetchTags(parentTag = '') {
+      if (this.tagCache[parentTag]) {
+        this.childrenTags = this.tagCache[parentTag];
+        return;
+      }
       this.loading = true;
       try {
         const response = await axios.get(`http://localhost:5428/tags/${parentTag}`);
-        this.currentScopeTags = response.data;
-        this.filteredTags = this.currentScopeTags;
+        this.childrenTags = response.data;
+        this.tagCache[parentTag] = response.data;
       } catch (error) {
         console.error(error);
       } finally {
         this.loading = false;
       }
     },
-    onChange(val) {
-      let currentScopeTag = '';
-      if (val.endsWith(':')) {
-        const parentTag = val.split(':').slice(0, -1).join(':');
-        this.fetchTags(parentTag);
-      } else {
-        currentScopeTag = val.split(':').slice(-1)[0];
-      }
+    async onChange(val) {
+      // onChange won't trigger when set this.search
+      const { parent: parentTag, leaf: childTag } = this.getParentAndLeaf(val);
+      await this.fetchTags(parentTag);
 
-      if (!currentScopeTag) {
-        this.filteredTags = this.currentScopeTags;
+      if (childTag=='') { // endswith(':') or val==''
+        this.filteredTags = this.childrenTags;
       } else {
-        this.filteredTags = this.currentScopeTags.filter(tag => tag.includes(currentScopeTag));
+        this.filteredTags = this.childrenTags.filter(tag => tag.includes(childTag));
       }
+    },
+    getParentAndLeaf(fullTag) {
+      const parts = fullTag.split(':');
+      const parent = parts.slice(0, -1).join(':');
+      const leaf = parts[parts.length - 1];
+      return { parent, leaf };
     },
     addTag() {
       if (this.search && !this.selectedTags.includes(this.search)) {
         this.selectedTags.push(this.search);
         this.search = '';
+        this.onChange(this.search);
       }
     },
     selectTag(tag) {
-      const parentTag = this.search.split(':').slice(0, -1).join(':');
+      const { parent: parentTag, leaf: childTag } = this.getParentAndLeaf(this.search);
       if (parentTag) {
         this.search = `${parentTag}:${tag}`;
       } else {
         this.search = tag;
       }
-      this.menu = false;
+      this.$nextTick(() => {
+        this.$refs.searchField.focus();
+      });
     },
-    onFocus(focus) {
-      if (focus) {
-        this.menu = true;
-      }
-    },
+    onFocus() {
+      this.onChange(this.search);
+    }
   },
   mounted() {
-    this.fetchTags();
   },
 };
 </script>
