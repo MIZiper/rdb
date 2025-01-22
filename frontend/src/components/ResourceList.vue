@@ -1,7 +1,5 @@
 <template>
   <v-container>
-    <v-autocomplete v-model="searchQuery" :items="allTags" label="Search" prepend-icon="mdi-magnify" clearable multiple
-      chips></v-autocomplete>
     <v-row justify="space-between" align="center">
       <v-col>
         <p>{{ results.length }} results found</p>
@@ -51,15 +49,11 @@
 </template>
 
 <script>
+import { getTagColor } from './utils'; // Import the getTagColor function
+
 export default {
   data() {
     return {
-      searchQuery: [],
-      allTags: [
-        'apple', 'banana', 'cherry', 'date', 'elderberry', 'fig', 'grape', 'honeydew', 'kiwi', 'lemon',
-        'mango', 'nectarine', 'orange', 'papaya', 'quince', 'raspberry', 'strawberry', 'tangerine', 'ugli', 'vanilla',
-        'watermelon', 'xigua'
-      ],
       results: [
         {
           title: 'Sample Result 1',
@@ -157,19 +151,7 @@ export default {
         console.error('Error fetching resources:', error);
       }
     },
-    getTagColor(tag) {
-      const tagCategory = tag.split(':')[0];
-      const hash = Math.abs(this.hashString(tagCategory));
-      const colors = ['red', 'pink', 'purple', 'deep-purple', 'indigo', 'blue', 'light-blue', 'cyan', 'teal', 'green', 'light-green', 'lime', 'orange', 'deep-orange', 'brown', 'grey', 'blue-grey'];
-      return colors[hash % colors.length];
-    },
-    hashString(str) {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return hash;
-    }
+    getTagColor // Add getTagColor to methods
   },
   created() {
     this.fetchResources();

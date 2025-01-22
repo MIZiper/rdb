@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <v-container>
     <v-row class="ma-0" style="min-height: 40px;">
-      <v-chip v-for="(tag, index) in selectedTags" :key="index" closable>
+      <v-chip v-for="(tag, index) in selectedTags" :key="index" closable :color="getTagColor(tag)" variant="flat">
         {{ tag }}
       </v-chip>
     </v-row>
@@ -15,11 +15,12 @@
         </v-list>
       </v-menu>
     </v-text-field>
-  </div>
+  </v-container>
 </template>
 
 <script>
 import axios from 'axios';
+import { getTagColor } from './utils'; // Import the getTagColor function
 
 export default {
   data() {
@@ -86,7 +87,8 @@ export default {
     },
     onFocus() {
       this.onChange(this.search);
-    }
+    },
+    getTagColor, // Add getTagColor to methods
   },
   mounted() {
   },
