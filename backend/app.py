@@ -1,11 +1,14 @@
 from flask import Flask, jsonify, request
-from rtm import TagStr, TagStrFull, Manager, Resource, TAG_SPLITTER
 from flask_cors import CORS
 import atexit
 
+from rtm import TagStr, TagStrFull, Manager, Resource, TAG_SPLITTER
+from rdb import SQLiteResourceConnector
+
 app = Flask(__name__)
 CORS(app)
-manager = Manager()
+tag_manager = manager = Manager()
+connector: SQLiteResourceConnector = None
 
 
 
@@ -25,12 +28,13 @@ def create_tag():
 
 @app.route("/resources", methods=['GET'])
 def show_resource_list(): # order by added date
-    resources = manager.get_all_resources()
+    resources = connector.get_resources(0, 999)
     return jsonify([resource.to_dict() for resource in resources])
 
 @app.route("/resources/<string:resource>", methods=['GET'])
 def show_resource(resource: str):
-    resource_obj = manager.get_resource(resource)
+    res_id = int(resource)
+    resource_obj = connector.get_resource(res_id)
     if not resource_obj:
         return jsonify({'error': 'Resource not found'}), 404
     return jsonify(resource_obj.to_dict())
@@ -42,10 +46,7 @@ def add_resource_with_tags():
         return jsonify({'error': 'Resource name is required'}), 400
     
     tags = data.get('tags', '')  # Optional tags string (tag1;;tag2;;tag3)
-    resource = Resource(data['name'])
-    if tags:
-        for tag in tags.split(';;'):
-            resource.tags.append(tag)
+    resource = connector.new_resource(data['name'], tags)
     
     manager.add_resource(resource)
     return jsonify({'message': 'Resource created successfully'}), 201
@@ -53,10 +54,9 @@ def add_resource_with_tags():
 
 
 if __name__=="__main__":
-    from rdb import SQLiteResourceConnector
     from os import path
     import random
-    
+
     db_path = path.join(path.dirname(__file__), '../storage/resources.db')
     if not path.exists(db_path):
         connector = SQLiteResourceConnector(manager, db_path)

@@ -1,4 +1,6 @@
 """Resource Tag Manager
+
+Only holds the meta info for tags
 """
 
 TAG_HIER = ":"
@@ -17,28 +19,23 @@ class TagsFullStr(str): # multiple tags, A1:..:An;;B1:..:Bn;;...
 
 class Resource:
     """The minimum representor of a resource"""
-    def __init__(self, name: str, tags_str: TagsFullStr=None):
-        self.name = name
+    def __init__(self, res_id: str, tags_str: TagsFullStr=None):
+        self.res_id = res_id # connector to handle how to generate the unique identifier
+        # `res_id` is not supposed to change, hence only changable property is `tags`
         self.tags: list[TagStrFull] = [] if tags_str is None or tags_str=='' else tags_str.split(TAG_SPLITTER) # use list[str] or list[object]?
 
     @property
     def tags_str(self) -> TagsFullStr:
         return TAG_SPLITTER.join(self.tags)
 
-    def flush_update(self):
+    def flush_tags_update(self):
         raise NotImplementedError
 
     def __repr__(self):
         return str(self)
 
     def __str__(self):
-        return f"Resource<{self.name}>"
-    
-    def to_dict(self):
-        return {
-            'name': self.name,
-            'tags': self.tags,
-        }
+        return f"Resource<{self.res_id}>"
     
 class TagNode:
     """TagNode hold related resources attached to the tag, and form a tree with parent/child relationship"""
@@ -125,10 +122,9 @@ class Manager:
             tag_node = self.get_or_create_tag(full_tag_str)
             tag_node.resources.add(resource)
 
-    # @cache
-    def get_all_resources(self) -> set[Resource]:
-        # to save the info (e.g., save as json if tags are not stored in resource itself)
-        return set(self._root_node.collect_resources())
+    def get_resource(self, resource_id: str) -> Resource:
+        # need to return the resource object as input for `update_resource_tags`
+        raise NotImplementedError
 
     def filter_resources(self, tags: list[TagStrFull]) -> set[Resource]:
         # TODO: extends to multiple operands, and sorter
@@ -174,7 +170,7 @@ class Manager:
             tag_node.resources.add(resource)
 
         resource.tags = tags.copy()
-        resource.flush_update()
+        resource.flush_tags_update()
 
     def rename_tag(self, from_tag: TagStrFull, to_tag: TagStrFull): # also for tag-duplication case, e.g. hello == hi, created by different users
         # need to lock
@@ -220,7 +216,7 @@ class Manager:
             # - no need to iterate full keys, just update the affected ones
 
         for resource in resources_2b_updated:
-            resource.flush_update()
+            resource.flush_tags_update()
 
     def tree_print(self, node: TagNode=None, depth: int=0):
         if node is None:

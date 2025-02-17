@@ -37,30 +37,38 @@ class ResultRecord(Base):
 
 
 class SQLiteResource(Resource):
+    # NOTE: the object doesn't need to be inside a `manager`
     def __init__(self, id: int, name: str, tags_str: TagsFullStr, conn: sqlite3.Connection):
-        super().__init__(name=name, tags_str=tags_str)
+        super().__init__(res_id=id, tags_str=tags_str)
 
         self.id = id
+        self.name = name
         self.conn = conn
 
     def __str__(self):
         return f"SQLiteResource<{self.name} @ {self.id}>"
     
-    def flush_update(self):
+    def flush_tags_update(self):
         cursor = self.conn.cursor()
         cursor.execute('''
             UPDATE resources
-            SET ResourceName = ?, Tags = ?
+            SET Tags = ?
             WHERE ID = ?
-        ''', (self.name, self.tags_str, self.id))
+        ''', (self.tags_str, self.id))
         self.conn.commit()
+
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'tags': self.tags
+        }
 
 class SQLiteResourceConnector(ResourceConnector):
     def __init__(self, manager: Manager, db_path: str):
         super().__init__(manager)
 
         self.db_path = db_path
-        self.conn = sqlite3.connect(self.db_path)
+        self.conn = sqlite3.connect(self.db_path, check_same_thread=False) # temporary in multi-threads
         self.cursor = self.conn.cursor()
         self._create_table()
 
@@ -84,6 +92,7 @@ class SQLiteResourceConnector(ResourceConnector):
             self.manager.add_resource(resource)
 
     def new_resource(self, name: str, tags_str: TagsFullStr) -> SQLiteResource:
+        # NOTE: the caller has to do `manager.add_resource`, but why not embed inside this function?
         cursor = self.conn.cursor()
         cursor.execute('''
             INSERT INTO resources (ResourceName, Tags)
@@ -93,6 +102,32 @@ class SQLiteResourceConnector(ResourceConnector):
         resource_id = cursor.lastrowid
 
         return SQLiteResource(resource_id, name, tags_str, self.conn)
+    
+    def get_resources(self, page: int, items_per_page: int=7) -> list[SQLiteResource]:
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT ID, ResourceName, Tags
+            FROM resources
+            ORDER BY ID DESC
+            LIMIT ? OFFSET ?
+        ''', (items_per_page, page*items_per_page))
+
+        rows = cursor.fetchall()
+        resources = [SQLiteResource(id, resource_name, tags_str, self.conn) for id, resource_name, tags_str in rows]
+        
+        return resources
+    
+    def get_resource(self, id: int) -> SQLiteResource:
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT ResourceName, Tags
+            FROM resources
+            WHERE ID = ?
+        ''', (id,))
+
+        resource_name, tags_str = cursor.fetchone()
+
+        return SQLiteResource(id, resource_name, tags_str, self.conn)
     
     def close(self):
         self.conn.close()
