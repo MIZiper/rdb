@@ -67,13 +67,15 @@ class SQLiteResourceConnector(ResourceConnector):
     def __init__(self, manager: Manager, db_path: str):
         super().__init__(manager)
 
+        self._total_resources = 0
         self.db_path = db_path
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False) # temporary in multi-threads
-        self.cursor = self.conn.cursor()
+
         self._create_table()
 
     def _create_table(self):
-        self.cursor.execute('''
+        cursor = self.conn.cursor()
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS resources (
                 ID INTEGER PRIMARY KEY AUTOINCREMENT,
                 ResourceName TEXT NOT NULL,
@@ -82,9 +84,19 @@ class SQLiteResourceConnector(ResourceConnector):
         ''')
         self.conn.commit()
 
+    @property
+    def total_resources(self):
+        if self._total_resources == 0:
+            cursor = self.conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM resources')
+            # if `deleted` column is added, then use `WHERE deleted=0`
+            self._total_resources = cursor.fetchone()[0]
+        return self._total_resources
+
     def load_resources(self):
-        self.cursor.execute('SELECT ID, ResourceName, Tags FROM resources')
-        rows = self.cursor.fetchall()
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT ID, ResourceName, Tags FROM resources')
+        rows = cursor.fetchall()
         
         for row in rows:
             id, resource_name, tags_str = row
@@ -100,6 +112,7 @@ class SQLiteResourceConnector(ResourceConnector):
         ''', (name, tags_str))
         self.conn.commit()
         resource_id = cursor.lastrowid
+        self._total_resources = 0 # reset the counter cache, same for delete
 
         return SQLiteResource(resource_id, name, tags_str, self.conn)
     

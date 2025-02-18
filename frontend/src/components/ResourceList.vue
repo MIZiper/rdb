@@ -2,10 +2,10 @@
   <v-container>
     <v-row class="align-center">
       <v-col>
-        <p>{{ results.length }} results found</p>
+        <p>{{ totalItems }} results found</p>
       </v-col>
       <v-col cols="auto" class="d-flex align-center">
-        <v-pagination v-model="page" :length="pageCount" :total-visible="5"></v-pagination>
+        <v-pagination v-model="page" :length="pageCount" :total-visible="5" @update:modelValue="onPageChange"></v-pagination>
         <v-btn icon @click="toggleSortOrder" class="ml-3">
           <v-icon>
             {{
@@ -41,7 +41,7 @@
       </v-list-item>
     </v-list>
     <v-row justify="end">
-      <v-pagination v-model="page" :length="pageCount" :total-visible="5"></v-pagination>
+      <v-pagination v-model="page" :length="pageCount" :total-visible="5" @update:modelValue="onPageChange"></v-pagination>
     </v-row>
   </v-container>
 </template>
@@ -121,8 +121,10 @@ export default {
         },
       ],
       page: 1,
+      totalItems: 0,
       itemsPerPage: 7,
-      sortOrder: 'None'
+      sortOrder: 'None',
+      paginationMode: 'static' // 'dynamic' mode for resources listing, 'static' mode for results filtered by tags
     };
   },
   methods: {
@@ -137,31 +139,43 @@ export default {
     },
     async fetchResources() {
       try {
-        const response = await fetch('http://localhost:5428/resources');
+        const response = await fetch(`http://localhost:5428/resources?page=${this.page}`);
         const data = await response.json();
-        this.results = data.map(resource => ({
+        this.results = data['resources'].map(resource => ({
           title: resource.name,
           description: resource.description || '',
           tags: resource.tags,
           modifiedDate: resource.modifiedDate
         }));
+        this.totalItems = data['total_resources'];
+        this.itemsPerPage = data['items_per_page'];
+        this.paginationMode = 'dynamic';
       } catch (error) {
         console.error('Error fetching resources:', error);
       }
     },
-    getTagColor // Add getTagColor to methods
+    getTagColor, // Add getTagColor to methods
+    onPageChange() {
+      if (this.paginationMode === 'dynamic') {
+        this.fetchResources();
+      }
+    }
   },
   created() {
+    this.totalItems = this.results.length;
     this.fetchResources();
   },
   computed: {
     pageCount() {
-      return Math.ceil(this.results.length / this.itemsPerPage);
+      return Math.ceil(this.totalItems / this.itemsPerPage);
     },
     paginatedResults() {
-      const start = (this.page - 1) * this.itemsPerPage;
-      const end = start + this.itemsPerPage;
-      return this.results.slice(start, end);
+      if (this.paginationMode === 'static') {
+        const start = (this.page - 1) * this.itemsPerPage;
+        const end = start + this.itemsPerPage;
+        return this.results.slice(start, end);
+      }
+      return this.results;
     }
   }
 };

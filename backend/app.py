@@ -28,8 +28,15 @@ def create_tag():
 
 @app.route("/resources", methods=['GET'])
 def show_resource_list(): # order by added date
-    resources = connector.get_resources(0, 999)
-    return jsonify([resource.to_dict() for resource in resources])
+    ITEMS_PER_PAGE = 9
+    page = request.args.get('page', 1, type=int)
+    page = max(0, page-1)
+    resources = connector.get_resources(page, ITEMS_PER_PAGE)
+    return jsonify({
+        'resources': [res.to_dict() for res in resources],
+        'total_resources': connector.total_resources,
+        'items_per_page': ITEMS_PER_PAGE,
+    })
 
 @app.route("/resources/<string:resource>", methods=['GET'])
 def show_resource(resource: str):
