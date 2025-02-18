@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-row class="ma-0" style="min-height: 40px;">
-      <v-chip v-for="(tag, index) in selectedTags" :key="index" closable :color="getTagColor(tag)" variant="flat">
+      <v-chip v-for="(tag, index) in selectedTags" :key="index" @click="deleteTag(index)" append-icon="$delete" :color="getTagColor(tag)" variant="flat">
         {{ tag }}
       </v-chip>
     </v-row>
@@ -84,6 +84,9 @@ export default {
       this.$nextTick(() => {
         this.$refs.searchField.focus();
       });
+    },
+    deleteTag(index) {
+      this.selectedTags.splice(index, 1)
     },
     onFocus() {
       this.onChange(this.search);

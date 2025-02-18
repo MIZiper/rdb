@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-row justify="space-between" align="center">
+    <v-row class="align-center">
       <v-col>
         <p>{{ results.length }} results found</p>
       </v-col>
@@ -21,12 +21,11 @@
     </v-row>
     <v-list>
       <v-list-item v-for="(result, index) in paginatedResults" :key="index" class="mb-2">
-        <v-list-item-content>
-          <v-row justify="space-between" align="center">
+          <v-row>
             <v-col>
               <v-list-item-title>{{ result.title }}</v-list-item-title>
             </v-col>
-            <v-col cols="auto" class="d-flex align-center">
+            <v-col cols="auto">
               <v-icon small class="mr-1">mdi-calendar</v-icon>
               <small>{{ result.modifiedDate }}</small>
             </v-col>
@@ -39,7 +38,6 @@
               </v-chip>
             </a>
           </v-row>
-        </v-list-item-content>
       </v-list-item>
     </v-list>
     <v-row justify="end">
