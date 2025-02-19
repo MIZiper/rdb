@@ -59,6 +59,7 @@ class SQLiteResource(Resource):
 
     def to_dict(self):
         return {
+            'uuid': self.id,
             'name': self.name,
             'tags': self.tags
         }

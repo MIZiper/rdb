@@ -24,16 +24,18 @@
       <v-list-item v-for="(result, index) in paginatedResults" :key="index" class="mb-2">
         <v-row>
           <v-col>
-            <v-list-item-title>{{ result.title }}</v-list-item-title>
+            <a :href="`/resources/${result.uuid || ''}`" target="_blank">
+              <v-list-item-title>{{ result.name }}</v-list-item-title>
+            </a>
           </v-col>
           <v-col cols="auto">
             <v-icon small class="mr-1">mdi-calendar</v-icon>
             <small>{{ result.modifiedDate }}</small>
           </v-col>
         </v-row>
-        <v-list-item-subtitle class="ma-3">{{ result.description }}</v-list-item-subtitle>
+        <v-list-item-subtitle class="ma-3">{{ result.description || '[No description]' }}</v-list-item-subtitle>
         <v-row class="ma-0">
-          <a v-for="(tag, tagIndex) in result.tags" :key="tagIndex" :href="`/search?tag=${tag}`" target="_blank">
+          <a v-for="(tag, tagIndex) in result.tags" :key="tagIndex" :href="`/resources?tags=${tag}`" target="_blank">
             <v-chip :color="getTagColor(tag)" class="mr-1 mb-1">
               {{ tag }}
             </v-chip>
@@ -73,12 +75,7 @@ export default {
       }
     },
     setResults(data, dynamic_cb = null, page = 1) {
-      this.results = data['resources'].map(resource => ({
-        title: resource.name,
-        description: resource.description || '[No description]',
-        tags: resource.tags,
-        modifiedDate: resource.modifiedDate
-      }));
+      this.results = data['resources'];
       this.totalItems = data['total_resources'];
       this.page = page;
       if (data['items_per_page'] == 0) {
@@ -190,5 +187,9 @@ export default {
 .v-list-item {
   border: 1px solid #e0e0e0;
   border-radius: 4px;
+}
+.v-list-item a {
+  text-decoration: none;
+  color: black;
 }
 </style>
