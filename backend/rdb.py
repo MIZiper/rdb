@@ -116,7 +116,7 @@ class SQLiteResourceConnector(ResourceConnector):
 
         return SQLiteResource(resource_id, name, tags_str, self.conn)
     
-    def get_resources(self, page: int, items_per_page: int=7) -> list[SQLiteResource]:
+    def get_resources_by_page(self, page: int, items_per_page: int=7) -> list[SQLiteResource]:
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT ID, ResourceName, Tags
@@ -128,6 +128,19 @@ class SQLiteResourceConnector(ResourceConnector):
         rows = cursor.fetchall()
         resources = [SQLiteResource(id, resource_name, tags_str, self.conn) for id, resource_name, tags_str in rows]
         
+        return resources
+    
+    def get_resources_by_ids(self, ids: list[str]) -> list[SQLiteResource]:
+        cursor = self.conn.cursor()
+        cursor.execute(f'''
+            SELECT ID, ResourceName, Tags
+            FROM resources
+            WHERE ID in ({','.join(ids)})
+        ''',)
+
+        rows = cursor.fetchall()
+        resources = [SQLiteResource(id, resource_name, tags_str, self.conn) for id, resource_name, tags_str in rows]
+
         return resources
     
     def get_resource(self, id: int) -> SQLiteResource:

@@ -28,15 +28,25 @@ def create_tag():
 
 @app.route("/resources", methods=['GET'])
 def show_resource_list(): # order by added date
-    ITEMS_PER_PAGE = 9
-    page = request.args.get('page', 1, type=int)
-    page = max(0, page-1)
-    resources = connector.get_resources(page, ITEMS_PER_PAGE)
-    return jsonify({
-        'resources': [res.to_dict() for res in resources],
-        'total_resources': connector.total_resources,
-        'items_per_page': ITEMS_PER_PAGE,
-    })
+    tags = request.args.get('tags', '', type=str)
+    if tags: # not empty tags, nor no-tags-key # /resources?tags=...
+        t_resources = manager.filter_resources(tags.split(TAG_SPLITTER))
+        resources = connector.get_resources_by_ids([str(t_res.res_id) for t_res in t_resources])
+        return jsonify({
+            'resources': [res.to_dict() for res in resources],
+            'total_resources': len(resources),
+            'items_per_page': 0,
+        })
+    else: # /resources, /resources?page=..., /resources?tags=<empty>
+        ITEMS_PER_PAGE = 9
+        page = request.args.get('page', 1, type=int)
+        page = max(0, page-1)
+        resources = connector.get_resources_by_page(page, ITEMS_PER_PAGE)
+        return jsonify({
+            'resources': [res.to_dict() for res in resources],
+            'total_resources': connector.total_resources,
+            'items_per_page': ITEMS_PER_PAGE,
+        })
 
 @app.route("/resources/<string:resource>", methods=['GET'])
 def show_resource(resource: str):
