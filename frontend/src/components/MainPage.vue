@@ -2,7 +2,7 @@
   <v-container>
     <v-row>
       <v-col cols="12" md="8">
-        <component :is="dynamicComponent"></component>
+        <component :is="dynamicComponent" :data="responseData"></component>
       </v-col>
       <v-col cols="12" md="4">
         <ContentViewerTemplate :resource="resource" />
@@ -13,14 +13,19 @@
 
 <script>
 import ContentViewerTemplate from './ContentViewerTemplate.vue';
+import MarkdownPage from '../models/MarkdownPage.vue';
+import MermaidDiagram from '../models/MermaidDiagram.vue';
 
 export default {
   components: {
     ContentViewerTemplate,
+    MarkdownPage,
+    MermaidDiagram,
   },
   data() {
     return {
       dynamicComponent: null,
+      responseData: null,
       resource: {
         name: 'Resource Name',
         tags: ['tag1', 'tag2'],
@@ -31,8 +36,25 @@ export default {
     };
   },
   created() {
-    // Logic to set dynamicComponent based on server response
-    // this.dynamicComponent = ...
+    // Simulate server response
+    const serverResponse = {
+      type: 'mermaid', // or 'markdown'
+      data: `
+        graph TD;
+          A-->B;
+          A-->C;
+          B-->D;
+          C-->D;
+      `,
+    };
+
+    this.responseData = serverResponse.data;
+
+    if (serverResponse.type === 'markdown') {
+      this.dynamicComponent = 'MarkdownPage';
+    } else if (serverResponse.type === 'mermaid') {
+      this.dynamicComponent = 'MermaidDiagram';
+    }
   },
 }
 </script>
