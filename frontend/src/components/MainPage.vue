@@ -24,7 +24,8 @@ export default {
       resource: {
         name: 'Resource Name',
         tags: ['tag1', 'tag2'],
-        Link2Analysis: 'https://www.google.com',
+        description: 'What is this?',
+        Link2Analysis: 'https://github.com/MIZiper/rdb.git',
         UpdateDate: new Date().toISOString(),
       },
     };

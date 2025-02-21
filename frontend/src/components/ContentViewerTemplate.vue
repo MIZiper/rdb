@@ -15,19 +15,26 @@
           </v-row>
         </v-col>
 
+        <v-col v-if="resource.description" cols="12">
+          <div class="text-subtitle-1 font-weight-medium">Description:</div>
+          <div class="text-body-2">
+            {{ resource.description }}
+          </div>
+        </v-col>
+
         <v-col cols="12" sm="6">
           <div class="text-subtitle-1 font-weight-medium">Analysis Link:</div>
           <v-btn v-if="resource.Link2Analysis" :href="resource.Link2Analysis" variant="text" color="primary"
             prepend-icon="mdi-link" density="compact">
             View Analysis
           </v-btn>
-          <div v-else class="text-body-2">No linked analysis</div>
+          <div v-else class="text-body-2">[No linked analysis]</div>
         </v-col>
 
         <v-col cols="12" sm="6">
           <div class="text-subtitle-1 font-weight-medium">Last Updated:</div>
           <div class="text-body-2">
-            {{ resource.UpdateDate ? new Date(resource.UpdateDate).toLocaleString() : 'Not available' }}
+            {{ resource.UpdateDate ? new Date(resource.UpdateDate).toLocaleString() : '[Not available]' }}
           </div>
         </v-col>
       </v-row>
@@ -39,15 +46,11 @@
 import { getTagColor } from './utils';
 
 export default {
-  data() {
-    return {
-      resource: {
-        name: 'Resource Name',
-        tags: ['tag1', 'tag2'],
-        Link2Analysis: 'https://www.google.com',
-        UpdateDate: new Date().toISOString(),
-      },
-    };
+  props: {
+    resource: {
+      type: Object,
+      required: true,
+    },
   },
   methods: {
     getTagColor,
