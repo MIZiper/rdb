@@ -13,6 +13,7 @@
     "mermaid": "^11.4.1",
     "roboto-fontface": "*",
     "vue": "^3.4.21",
+    "vue-router": "^4.5.0",
     "vuetify": "^3.5.8"
   },
   "devDependencies": {
