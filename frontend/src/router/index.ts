@@ -1,4 +1,3 @@
-
 import { createRouter, createWebHistory } from 'vue-router';
 import ContentViewerTemplate from '../components/ContentViewerTemplate.vue';
 import MainPage from '../components/MainPage.vue';
@@ -9,14 +8,20 @@ import TagAdder from '../components/TagAdder.vue';
 // Define routes
 const routes = [
     { path: '/', redirect: '/resources' },
-    { path: '/resources', component: MainSearch },
-    { path: '/resources/:resource_id', component: MainPage },
+    { path: '/resources', component: MainSearch, meta: { title: 'Resources' } },
+    { path: '/resources/:resource_id', component: MainPage, meta: { title: 'Resource Details' } },
 ];
 
 // Create router instance
 const router = createRouter({
     history: createWebHistory(),
     routes,
+});
+
+// Global navigation guard to change document title
+router.beforeEach((to, from, next) => {
+    document.title = to.meta.title || 'Default Title';
+    next();
 });
 
 export default router;
