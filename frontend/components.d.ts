@@ -7,8 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
-    ContentEditorTemplate: typeof import('./src/components/ContentEditorTemplate.vue')['default']
-    ContentViewerTemplate: typeof import('./src/components/ContentViewerTemplate.vue')['default']
+    ContentInfoCard: typeof import('./src/components/ContentInfoCard.vue')['default']
     MainPage: typeof import('./src/components/MainPage.vue')['default']
     MainSearch: typeof import('./src/components/MainSearch.vue')['default']
     ResourceList: typeof import('./src/components/ResourceList.vue')['default']
