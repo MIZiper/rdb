@@ -7,8 +7,8 @@ import TagAdder from '../components/TagAdder.vue';
 
 // Define routes
 const routes = [
-    { path: '/', redirect: '/resources' },
-    { path: '/resources', component: MainSearch, meta: { title: 'Resources' } },
+    { path: '/', redirect: '/search' },
+    { path: '/search', component: MainSearch, meta: { title: 'Resources List' } },
     { path: '/resources/:resource_id', component: MainPage, meta: { title: 'Resource Details' } },
 ];
 

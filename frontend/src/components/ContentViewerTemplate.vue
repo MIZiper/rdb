@@ -7,7 +7,7 @@
         <v-col cols="12">
           <div class="text-subtitle-1 font-weight-medium">Tags:</div>
           <v-row class="ma-0">
-            <a v-for="(tag, index) in resource.tags" :key="index" :href="`/resources?tags=${tag}`" target="_blank">
+            <a v-for="(tag, index) in resource.tags" :key="index" :href="`/search?tags=${tag}`">
               <v-chip class="mr-1 mb-1" :color="getTagColor(tag)" variant="outlined">
                 {{ tag }}
               </v-chip>

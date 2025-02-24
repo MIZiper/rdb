@@ -13,8 +13,8 @@
 
 <script>
 import ContentViewerTemplate from './ContentViewerTemplate.vue';
-import MarkdownPage from '../models/MarkdownPage.vue';
-import MermaidDiagram from '../models/MermaidDiagram.vue';
+import MarkdownPage from '../modules/MarkdownPage.vue';
+import MermaidDiagram from '../modules/MermaidDiagram.vue';
 
 export default {
   components: {

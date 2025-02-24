@@ -21,7 +21,7 @@ export default {
         const selectedTags = this.$refs.tagAdder.selectedTags;
         tags = selectedTags.join(';;');
       }
-      this.$router.push({ path: '/resources', query: { tags } });
+      this.$router.push({ path: '/search', query: { tags } });
       try {
         const response = await fetch(`http://localhost:5428/resources?tags=${tags}`);
         const data = await response.json();
@@ -35,7 +35,7 @@ export default {
       // const tags = this.$route.query.tags || '';
       // const url = tags ? `http://localhost:5428/resources?tags=${tags}&page=${page}` : `http://localhost:5428/resources?page=${page}`;
       const url = `http://localhost:5428/resources?page=${page}`;
-      this.$router.push({ path: '/resources', query: { page } });
+      this.$router.push({ path: '/search', query: { page } });
       try {
         const response = await fetch(url);
         const data = await response.json();
