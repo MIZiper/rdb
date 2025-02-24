@@ -21,7 +21,7 @@ export default {
         const selectedTags = this.$refs.tagAdder.selectedTags;
         tags = selectedTags.join(';;');
       }
-      this.$router.push({ path: '/search', query: { tags } });
+      window.history.replaceState(null, '', `/search?tags=${tags}`);
       try {
         const response = await fetch(`http://localhost:5428/resources?tags=${tags}`);
         const data = await response.json();
@@ -32,10 +32,8 @@ export default {
       }
     },
     async fetchResources(page = 1) {
-      // const tags = this.$route.query.tags || '';
-      // const url = tags ? `http://localhost:5428/resources?tags=${tags}&page=${page}` : `http://localhost:5428/resources?page=${page}`;
       const url = `http://localhost:5428/resources?page=${page}`;
-      this.$router.push({ path: '/search', query: { page } });
+      window.history.replaceState(null, '', `/search`);
       try {
         const response = await fetch(url);
         const data = await response.json();
@@ -54,17 +52,5 @@ export default {
       this.fetchResources();
     }
   },
-  watch: {
-    '$route.query.tags': function(newTags) {
-      if (newTags) {
-        this.searchResourcesByTags(newTags);
-      } else {
-        this.fetchResources();
-      }
-    },
-    '$route.query.page': function(newPage) {
-      this.fetchResources(newPage);
-    }
-  }
 };
 </script>
