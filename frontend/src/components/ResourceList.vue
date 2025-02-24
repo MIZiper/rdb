@@ -1,5 +1,4 @@
 <template>
-  <v-container>
     <v-row class="align-center">
       <v-col>
         <p>{{ totalItems }} results found</p>
@@ -47,7 +46,6 @@
       <v-pagination v-model="page" :length="pageCount" :total-visible="5"
         @update:modelValue="onPageChange"></v-pagination>
     </v-row>
-  </v-container>
 </template>
 
 <script>

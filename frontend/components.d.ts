@@ -10,6 +10,7 @@ declare module 'vue' {
     ContentInfoCard: typeof import('./src/components/ContentInfoCard.vue')['default']
     MainPage: typeof import('./src/components/MainPage.vue')['default']
     MainSearch: typeof import('./src/components/MainSearch.vue')['default']
+    NewPage: typeof import('./src/components/NewPage.vue')['default']
     ResourceList: typeof import('./src/components/ResourceList.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

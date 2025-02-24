@@ -1,9 +1,10 @@
 <template>
-  <TagAdder class="pb-0" ref="tagAdder" />
-  <v-container class="pt-0">
+  <v-container>
+    <TagAdder ref="tagAdder" />
     <v-btn prepend-icon="mdi-magnify" @click="searchResourcesByTags()">Search</v-btn>
+
+    <ResourceList ref="resourceList" />
   </v-container>
-  <ResourceList ref="resourceList" />
 </template>
 
 <script>
