@@ -25,6 +25,9 @@ class ResultRecord(Base):
     AddDate = Column(DateTime, default=datetime.utcnow)
     UpdateDate = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     BoundObject = Column(BINARY, nullable=True)
+    Link = Column(String, default='')
+    Description = Column(String, default='')
+    Content = Column(BINARY, nullable=True)
 
     def to_blob(self) -> bytes:
         # Implement the logic to convert the object to a blob
@@ -80,8 +83,14 @@ class SQLiteResourceConnector(ResourceConnector):
             CREATE TABLE IF NOT EXISTS resources (
                 ID INTEGER PRIMARY KEY AUTOINCREMENT,
                 ResourceName TEXT NOT NULL,
-                Tags TEXT NOT NULL
-            )
+                Description TEXT,
+                Tags TEXT NOT NULL,
+                Content TEXT,
+                Link TEXT,
+                ModuleInfo TEXT,
+                AddDate DATE DEFAULT (DATE('now')),
+                UpdateDate DATE DEFAULT (DATE('now'))
+            );
         ''')
         self.conn.commit()
 

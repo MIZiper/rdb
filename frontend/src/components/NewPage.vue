@@ -3,7 +3,7 @@
     <v-row>
       <v-col cols="12" md="8">
         <v-select label="Resource Types" v-model="dynamicComponent" :items="AvailableModules" item-title="title" item-value="vueName"></v-select>
-        <component v-if="dynamicComponent" :editMode="true" :is="dynamicComponent" :data="requestData"></component>
+        <component v-if="dynamicComponent" :editMode="true" :is="dynamicComponent" ref="component"></component>
       </v-col>
       <v-col cols="12" md="4">
         <v-card>
@@ -15,11 +15,11 @@
 
             <v-divider />
             <div class="text-subtitle-1 font-weight-medium">Tags:</div>
-            <TagAdder />
+            <TagAdder ref="tagAdder" />
           </v-card-text>
           <v-card-actions>
             <v-spacer />
-            <v-btn color="primary" variant="outlined">Submit</v-btn>
+            <v-btn color="primary" variant="outlined" @click="submitResource">Submit</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -43,19 +43,43 @@ export default {
         name: 'Some resource name',
         link: 'https://github.com/MIZiper/rdb.git',
         description: 'Some long long description.',
+        tags: [],
 
         type: undefined,
         content: null,
       },
       dynamicComponent: null,
-      requestData: '',
 
       AvailableModules: [
         { title: "Markdown", vueName: "MarkdownPage" },
         { title: "Mermaid Diagram", vueName: "MermaidDiagram" },
       ],
     }
-  }
-}
+  },
+  methods: {
+    async submitResource() {
+      // validate resource
+      if (this.dynamicComponent != null) {
+        this.resource.type = this.dynamicComponent;
+        this.resource.content = this.$refs.component.editData;
+      }
+      this.resource.tags = this.$refs.tagAdder.selectedTags;
 
+      const response = await fetch('/resources', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(this.resource),
+      });
+      if (response.ok) {
+        // Handle successful submission
+        console.log('Resource created successfully');
+      } else {
+        // Handle error
+        console.error('Error creating resource');
+      }
+    },
+  },
+}
 </script>
