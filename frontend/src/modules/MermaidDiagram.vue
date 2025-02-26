@@ -30,7 +30,8 @@ export default {
         }
     },
     mounted() {
-        mermaid.initialize({ startOnLoad: true });
+        mermaid.initialize();
+        this.$nextTick(() => {mermaid.run()});
     },
     methods: {
         renderDiagram() {

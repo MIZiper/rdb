@@ -37,11 +37,7 @@ export default {
         this.resource = data;
         this.responseData = data.content; // Assuming the content is part of the resource data
 
-        if (data.type === 'markdown') {
-          this.dynamicComponent = 'MarkdownPage';
-        } else if (data.type === 'mermaid') {
-          this.dynamicComponent = 'MermaidDiagram';
-        }
+        this.dynamicComponent = data.type;
       })
       .catch(error => {
         console.error('Error fetching resource:', error);

@@ -6,7 +6,7 @@ from uuid import uuid4
 from datetime import datetime
 from rtm import Resource, TagsFullStr, Manager, ResourceConnector
 
-from sqlalchemy import Column, String, DateTime, BINARY, create_engine
+from sqlalchemy import Column, String, DateTime, BINARY, create_engine, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -17,17 +17,15 @@ Base = declarative_base()
 class ResultRecord(Base):
     __tablename__ = 'result_records'
 
-    UUID = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    UUID = Column(Integer, primary_key=True, autoincrement=True)
     Title = Column(String, nullable=False)
-    Link2Analysis = Column(String, default='')
     ModuleInfo = Column(String, default='ModuleName;;v0.0.1')
     Tags = Column(String, default='')
     AddDate = Column(DateTime, default=datetime.utcnow)
     UpdateDate = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    BoundObject = Column(BINARY, nullable=True)
     Link = Column(String, default='')
     Description = Column(String, default='')
-    Content = Column(BINARY, nullable=True)
+    Content = Column(String, default='')
 
     def to_blob(self) -> bytes:
         # Implement the logic to convert the object to a blob
@@ -40,133 +38,98 @@ class ResultRecord(Base):
 
 
 class SQLiteResource(Resource):
-    # NOTE: the object doesn't need to be inside a `manager`
-    def __init__(self, id: int, name: str, tags_str: TagsFullStr, conn: sqlite3.Connection):
+    def __init__(self, id: int, name: str, tags_str: TagsFullStr, session):
         super().__init__(res_id=id, tags_str=tags_str)
-
         self.id = id
         self.name = name
-        self.conn = conn
+        self.session = session
 
     def __str__(self):
         return f"SQLiteResource<{self.name} @ {self.id}>"
     
     def flush_tags_update(self):
-        cursor = self.conn.cursor()
-        cursor.execute('''
-            UPDATE resources
-            SET Tags = ?
-            WHERE ID = ?
-        ''', (self.tags_str, self.id))
-        self.conn.commit()
+        resource = self.session.query(ResultRecord).filter_by(UUID=self.id).first()
+        resource.Tags = self.tags_str
+        self.session.commit()
 
     def to_dict(self):
         return {
             'uuid': self.id,
             'name': self.name,
-            'tags': self.tags
+            'tags': self.tags,
+        }
+    
+    def to_meta_dict(self):
+        resource = self.session.query(ResultRecord).filter_by(UUID=self.id).first()
+        return {
+            'uuid': resource.UUID,
+            'name': resource.Title,
+            'tags': self.tags,
+            'update_date': resource.UpdateDate,
+            'description': resource.Description
+        }
+
+    def to_detail_dict(self):
+        resource = self.session.query(ResultRecord).filter_by(UUID=self.id).first()
+        return {
+            'uuid': resource.UUID,
+            'name': resource.Title,
+            'tags': self.tags,
+            'update_date': resource.UpdateDate,
+            'description': resource.Description,
+            'type': resource.ModuleInfo,
+            'link': resource.Link,
+            'content': resource.Content
         }
 
 class SQLiteResourceConnector(ResourceConnector):
     def __init__(self, manager: Manager, db_path: str):
         super().__init__(manager)
-
-        self._total_resources = 0
         self.db_path = db_path
-        self.conn = sqlite3.connect(self.db_path, check_same_thread=False) # temporary in multi-threads
-
-        self._create_table()
-
-    def _create_table(self):
-        cursor = self.conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS resources (
-                ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                ResourceName TEXT NOT NULL,
-                Description TEXT,
-                Tags TEXT NOT NULL,
-                Content TEXT,
-                Link TEXT,
-                ModuleInfo TEXT,
-                AddDate DATE DEFAULT (DATE('now')),
-                UpdateDate DATE DEFAULT (DATE('now'))
-            );
-        ''')
-        self.conn.commit()
+        self.engine = create_engine(f'sqlite:///{self.db_path}')
+        Base.metadata.create_all(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
+        self.session = self.Session()
 
     @property
     def total_resources(self):
-        if self._total_resources == 0:
-            cursor = self.conn.cursor()
-            cursor.execute('SELECT COUNT(*) FROM resources')
-            # if `deleted` column is added, then use `WHERE deleted=0`
-            self._total_resources = cursor.fetchone()[0]
-        return self._total_resources
+        return self.session.query(ResultRecord).count()
 
     def load_resources(self):
-        cursor = self.conn.cursor()
-        cursor.execute('SELECT ID, ResourceName, Tags FROM resources')
-        rows = cursor.fetchall()
-        
-        for row in rows:
-            id, resource_name, tags_str = row
-            resource = SQLiteResource(id, resource_name, tags_str, self.conn)
-            self.manager.add_resource(resource)
+        resources = self.session.query(ResultRecord).all()
+        for resource in resources:
+            sqlite_resource = SQLiteResource(resource.UUID, resource.Title, resource.Tags, self.session)
+            self.manager.add_resource(sqlite_resource)
 
-    def new_resource(self, name: str, tags_str: TagsFullStr) -> SQLiteResource:
-        # NOTE: the caller has to do `manager.add_resource`, but why not embed inside this function?
-        cursor = self.conn.cursor()
-        cursor.execute('''
-            INSERT INTO resources (ResourceName, Tags)
-            VALUES (?, ?)
-        ''', (name, tags_str))
-        self.conn.commit()
-        resource_id = cursor.lastrowid
-        self._total_resources = 0 # reset the counter cache, same for delete
-
-        return SQLiteResource(resource_id, name, tags_str, self.conn)
+    def new_resource(self, name: str, tags_str: TagsFullStr,
+                     description: str="", link: str="", content: str="", module_info: str="",
+                     ) -> SQLiteResource:
+        new_record = ResultRecord(
+            Title=name,
+            Tags=tags_str,
+            Description=description,
+            Link=link,
+            Content=content,
+            ModuleInfo=module_info
+        )
+        self.session.add(new_record)
+        self.session.commit()
+        return SQLiteResource(new_record.UUID, name, tags_str, self.session)
     
     def get_resources_by_page(self, page: int, items_per_page: int=7) -> list[SQLiteResource]:
-        cursor = self.conn.cursor()
-        cursor.execute('''
-            SELECT ID, ResourceName, Tags
-            FROM resources
-            ORDER BY ID DESC
-            LIMIT ? OFFSET ?
-        ''', (items_per_page, page*items_per_page))
-
-        rows = cursor.fetchall()
-        resources = [SQLiteResource(id, resource_name, tags_str, self.conn) for id, resource_name, tags_str in rows]
-        
-        return resources
+        resources = self.session.query(ResultRecord).order_by(ResultRecord.UUID.desc()).limit(items_per_page).offset(page*items_per_page).all()
+        return [SQLiteResource(resource.UUID, resource.Title, resource.Tags, self.session) for resource in resources]
     
     def get_resources_by_ids(self, ids: list[str]) -> list[SQLiteResource]:
-        cursor = self.conn.cursor()
-        cursor.execute(f'''
-            SELECT ID, ResourceName, Tags
-            FROM resources
-            WHERE ID in ({','.join(ids)})
-        ''',)
-
-        rows = cursor.fetchall()
-        resources = [SQLiteResource(id, resource_name, tags_str, self.conn) for id, resource_name, tags_str in rows]
-
-        return resources
+        resources = self.session.query(ResultRecord).filter(ResultRecord.UUID.in_(ids)).all()
+        return [SQLiteResource(resource.UUID, resource.Title, resource.Tags, self.session) for resource in resources]
     
     def get_resource(self, id: int) -> SQLiteResource:
-        cursor = self.conn.cursor()
-        cursor.execute('''
-            SELECT ResourceName, Tags
-            FROM resources
-            WHERE ID = ?
-        ''', (id,))
-
-        resource_name, tags_str = cursor.fetchone()
-
-        return SQLiteResource(id, resource_name, tags_str, self.conn)
+        resource = self.session.query(ResultRecord).filter_by(UUID=id).first()
+        return SQLiteResource(resource.UUID, resource.Title, resource.Tags, self.session)
     
     def close(self):
-        self.conn.close()
+        self.session.close()
 
 if __name__=="__main__":
     # Example setup for SQLAlchemy

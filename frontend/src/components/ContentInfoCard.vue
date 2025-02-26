@@ -24,7 +24,7 @@
 
         <v-col cols="12" sm="6">
           <div class="text-subtitle-1 font-weight-medium">Analysis Link:</div>
-          <v-btn v-if="resource.Link2Analysis" :href="resource.Link2Analysis" variant="text" color="primary"
+          <v-btn v-if="resource.link" :href="resource.link" variant="text" color="primary"
             prepend-icon="mdi-link" density="compact">
             View Analysis
           </v-btn>
@@ -34,7 +34,7 @@
         <v-col cols="12" sm="6">
           <div class="text-subtitle-1 font-weight-medium">Last Updated:</div>
           <div class="text-body-2">
-            {{ resource.UpdateDate ? new Date(resource.UpdateDate).toLocaleString() : '[Not available]' }}
+            {{ resource.update_date ? new Date(resource.update_date).toLocaleString() : '[Not available]' }}
           </div>
         </v-col>
       </v-row>

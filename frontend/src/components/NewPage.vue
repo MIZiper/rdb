@@ -40,9 +40,9 @@ export default {
   data() {
     return {
       resource: {
-        name: 'Some resource name',
+        name: '',
         link: 'https://github.com/MIZiper/rdb.git',
-        description: 'Some long long description.',
+        description: '',
         tags: [],
 
         type: undefined,
@@ -65,7 +65,7 @@ export default {
       }
       this.resource.tags = this.$refs.tagAdder.selectedTags;
 
-      const response = await fetch('/resources', {
+      const response = await fetch('http://localhost:5428/resources', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

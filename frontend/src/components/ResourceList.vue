@@ -29,7 +29,7 @@
           </v-col>
           <v-col cols="auto">
             <v-icon small class="mr-1">mdi-calendar</v-icon>
-            <small>{{ result.modifiedDate }}</small>
+            <small>{{ result.update_date }}</small>
           </v-col>
         </v-row>
         <v-list-item-subtitle class="ma-3">{{ result.description || '[No description]' }}</v-list-item-subtitle>
@@ -66,10 +66,10 @@ export default {
     toggleSortOrder() {
       if (this.sortOrder === 'None' || this.sortOrder === 'Descending') {
         this.sortOrder = 'Ascending';
-        this.results.sort((a, b) => new Date(a.modifiedDate) - new Date(b.modifiedDate));
+        this.results.sort((a, b) => new Date(a.update_date) - new Date(b.update_date));
       } else {
         this.sortOrder = 'Descending';
-        this.results.sort((a, b) => new Date(b.modifiedDate) - new Date(a.modifiedDate));
+        this.results.sort((a, b) => new Date(b.update_date) - new Date(a.update_date));
       }
     },
     setResults(data, dynamic_cb = null, page = 1) {

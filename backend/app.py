@@ -33,7 +33,7 @@ def show_resource_list(): # order by added date
         t_resources = manager.filter_resources(tags.split(TAG_SPLITTER))
         resources = connector.get_resources_by_ids([str(t_res.res_id) for t_res in t_resources])
         return jsonify({
-            'resources': [res.to_dict() for res in resources],
+            'resources': [res.to_meta_dict() for res in resources],
             'total_resources': len(resources),
             'items_per_page': 0,
         })
@@ -43,7 +43,7 @@ def show_resource_list(): # order by added date
         page = max(0, page-1)
         resources = connector.get_resources_by_page(page, ITEMS_PER_PAGE)
         return jsonify({
-            'resources': [res.to_dict() for res in resources],
+            'resources': [res.to_meta_dict() for res in resources],
             'total_resources': connector.total_resources,
             'items_per_page': ITEMS_PER_PAGE,
         })
@@ -54,7 +54,7 @@ def show_resource(resource: str):
     resource_obj = connector.get_resource(res_id)
     if not resource_obj:
         return jsonify({'error': 'Resource not found'}), 404
-    return jsonify(resource_obj.to_dict())
+    return jsonify(resource_obj.to_detail_dict())
 
 @app.route("/resources", methods=['POST'])
 def add_resource_with_tags():
@@ -62,8 +62,11 @@ def add_resource_with_tags():
     if not data or 'name' not in data:
         return jsonify({'error': 'Resource name is required'}), 400
     
-    tags = data.get('tags', '')  # Optional tags string (tag1;;tag2;;tag3)
-    resource = connector.new_resource(data['name'], tags)
+    tags = TAG_SPLITTER.join(data.get('tags', []))  # Optional tags string (tag1;;tag2;;tag3)
+    resource = connector.new_resource(
+        data['name'], tags,
+        data.get('description', ''), data.get('link', ''), data.get('content', ''), data.get('type', '')
+    )
     
     manager.add_resource(resource)
     return jsonify({'message': 'Resource created successfully'}), 201
@@ -75,25 +78,8 @@ if __name__=="__main__":
     import random
 
     db_path = path.join(path.dirname(__file__), '../storage/resources.db')
-    if not path.exists(db_path):
-        connector = SQLiteResourceConnector(manager, db_path)
-        tags = [
-            'cultivation','cultivation:ball','cultivation:apple','conscience','conscience:fry','conscience:fry:tend','conscience:nest',
-            'build','build:disappoint','build:disappoint:tighten','build:disappoint:tighten:disappearance','build:disappoint:fancy',
-            'build:disappoint:fancy:tend','build:disappoint:fancy:tend:conscience','build:disappoint:fancy:tend:conscience:relation',
-            'build:disappoint:fancy:tend:conscience:winter','build:disappoint:fancy:tend:conscience:winter:and','build:disappoint:disappoint',
-            'build:bottle','build:luck','build:nursery','build:disappearance','disappearance','proof','proof:fruit','proof:paste',
-            'proof:paste:nest','proof:paste:cultivation','proof:paste:and','proof:respect'
-        ]
-        
-        for i in range(15):
-            l = random.randint(1, 5)
-            t = random.choices(tags, k=l)
-            res = connector.new_resource(f"Resource {i}", TAG_SPLITTER.join(t))
-            manager.add_resource(res)
-    else:
-        connector = SQLiteResourceConnector(manager, db_path)
-        connector.load_resources()
+    connector = SQLiteResourceConnector(manager, db_path)
+    connector.load_resources()
 
     atexit.register(connector.close)
     app.run(host="localhost", port="5428", debug=True)
