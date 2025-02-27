@@ -29,7 +29,7 @@
           </v-col>
           <v-col cols="auto">
             <v-icon small class="mr-1">mdi-calendar</v-icon>
-            <small>{{ result.update_date }}</small>
+            <small>{{ new Date(result.update_date).toLocaleString() }}</small>
           </v-col>
         </v-row>
         <v-list-item-subtitle class="ma-3">{{ result.description || '[No description]' }}</v-list-item-subtitle>
@@ -90,80 +90,6 @@ export default {
         this.paginationCB(this.page);
       }
     }
-  },
-  created() {
-    const example = [
-      {
-        name: 'Sample Result 1',
-        description: 'Description for Sample Result 1',
-        tags: ['apple', 'banana'],
-        modifiedDate: '2023-10-01'
-      },
-      {
-        name: 'Sample Result 2',
-        description: 'Description for Sample Result 2',
-        tags: ['cherry', 'date'],
-        modifiedDate: '2023-10-02'
-      },
-      {
-        name: 'Sample Result 3',
-        description: 'Description for Sample Result 3',
-        tags: ['elderberry', 'fig'],
-        modifiedDate: '2023-10-03'
-      },
-      {
-        name: 'Sample Result 4',
-        description: 'Description for Sample Result 4',
-        tags: ['grape', 'honeydew'],
-        modifiedDate: '2023-10-04'
-      },
-      {
-        name: 'Sample Result 5',
-        description: 'Description for Sample Result 5',
-        tags: ['kiwi', 'lemon'],
-        modifiedDate: '2023-10-05'
-      },
-      {
-        name: 'Sample Result 6',
-        description: 'Description for Sample Result 6',
-        tags: ['mango', 'nectarine'],
-        modifiedDate: '2023-10-06'
-      },
-      {
-        name: 'Sample Result 7',
-        description: 'Description for Sample Result 7',
-        tags: ['orange', 'papaya'],
-        modifiedDate: '2023-10-07'
-      },
-      {
-        name: 'Sample Result 8',
-        description: 'Description for Sample Result 8',
-        tags: ['quince', 'raspberry'],
-        modifiedDate: '2023-10-08'
-      },
-      {
-        name: 'Sample Result 9',
-        description: 'Description for Sample Result 9',
-        tags: ['strawberry', 'tangerine'],
-        modifiedDate: '2023-10-09'
-      },
-      {
-        name: 'Sample Result 10',
-        description: 'Description for Sample Result 10',
-        tags: ['ugli', 'vanilla'],
-        modifiedDate: '2023-10-10'
-      },
-      {
-        name: 'Sample Result 11',
-        description: 'Description for Sample Result 11',
-        tags: ['watermelon', 'xigua'],
-        modifiedDate: '2023-10-11'
-      },
-    ];
-
-    this.setResults(
-      { resources: example, total_resources: example.length, items_per_page: 0 },
-    )
   },
   computed: {
     pageCount() {

@@ -4,7 +4,7 @@
 import sqlite3
 from uuid import uuid4
 from datetime import datetime
-from rtm import Resource, TagsFullStr, Manager, ResourceConnector
+from rtm import Resource, TagsFullStr, Manager, ResourceConnector, TAG_SPLITTER
 
 from sqlalchemy import Column, String, DateTime, BINARY, create_engine, Integer
 from sqlalchemy.ext.declarative import declarative_base
@@ -21,8 +21,8 @@ class ResultRecord(Base):
     Title = Column(String, nullable=False)
     ModuleInfo = Column(String, default='ModuleName;;v0.0.1')
     Tags = Column(String, default='')
-    AddDate = Column(DateTime, default=datetime.utcnow)
-    UpdateDate = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    AddDate = Column(DateTime, default=datetime.now)
+    UpdateDate = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     Link = Column(String, default='')
     Description = Column(String, default='')
     Content = Column(String, default='')
@@ -34,7 +34,9 @@ class ResultRecord(Base):
     def from_blob(self) -> bytes:
         # Implement the logic to convert the blob back to the object
         pass
-
+R = ResultRecord
+LEAN_FIELDS = (R.UUID, R.Title, R.Tags) # for rtm
+META_FIELDS = (R.UUID, R.Title, R.Tags, R.UpdateDate, R.Description) # for resource list
 
 
 class SQLiteResource(Resource):
@@ -81,6 +83,16 @@ class SQLiteResource(Resource):
             'link': resource.Link,
             'content': resource.Content
         }
+    
+    @staticmethod
+    def resources_to_meta_list(resources: list[ResultRecord]) -> list[dict]:
+        return [{
+            'uuid': resource.UUID,
+            'name': resource.Title,
+            'tags': resource.Tags.split(TAG_SPLITTER),
+            'update_date': resource.UpdateDate,
+            'description': resource.Description
+        } for resource in resources]
 
 class SQLiteResourceConnector(ResourceConnector):
     def __init__(self, manager: Manager, db_path: str):
@@ -96,7 +108,7 @@ class SQLiteResourceConnector(ResourceConnector):
         return self.session.query(ResultRecord).count()
 
     def load_resources(self):
-        resources = self.session.query(ResultRecord).all()
+        resources = self.session.query(*LEAN_FIELDS).all()
         for resource in resources:
             sqlite_resource = SQLiteResource(resource.UUID, resource.Title, resource.Tags, self.session)
             self.manager.add_resource(sqlite_resource)
@@ -116,13 +128,11 @@ class SQLiteResourceConnector(ResourceConnector):
         self.session.commit()
         return SQLiteResource(new_record.UUID, name, tags_str, self.session)
     
-    def get_resources_by_page(self, page: int, items_per_page: int=7) -> list[SQLiteResource]:
-        resources = self.session.query(ResultRecord).order_by(ResultRecord.UUID.desc()).limit(items_per_page).offset(page*items_per_page).all()
-        return [SQLiteResource(resource.UUID, resource.Title, resource.Tags, self.session) for resource in resources]
+    def get_resources_by_page(self, page: int, items_per_page: int=7) -> list[ResultRecord]:
+        return self.session.query(*META_FIELDS).order_by(ResultRecord.UUID.desc()).limit(items_per_page).offset(page*items_per_page).all()
     
-    def get_resources_by_ids(self, ids: list[str]) -> list[SQLiteResource]:
-        resources = self.session.query(ResultRecord).filter(ResultRecord.UUID.in_(ids)).all()
-        return [SQLiteResource(resource.UUID, resource.Title, resource.Tags, self.session) for resource in resources]
+    def get_resources_by_ids(self, ids: list[int]) -> list[ResultRecord]:
+        return self.session.query(*META_FIELDS).filter(ResultRecord.UUID.in_(ids)).all()
     
     def get_resource(self, id: int) -> SQLiteResource:
         resource = self.session.query(ResultRecord).filter_by(UUID=id).first()

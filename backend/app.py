@@ -3,7 +3,7 @@ from flask_cors import CORS
 import atexit
 
 from rtm import TagStr, TagStrFull, Manager, Resource, TAG_SPLITTER
-from rdb import SQLiteResourceConnector
+from rdb import SQLiteResourceConnector, SQLiteResource
 
 app = Flask(__name__)
 CORS(app)
@@ -31,9 +31,9 @@ def show_resource_list(): # order by added date
     tags = request.args.get('tags', '', type=str)
     if tags: # not empty tags, nor no-tags-key # /resources?tags=...
         t_resources = manager.filter_resources(tags.split(TAG_SPLITTER))
-        resources = connector.get_resources_by_ids([str(t_res.res_id) for t_res in t_resources])
+        resources = connector.get_resources_by_ids([t_res.res_id for t_res in t_resources])
         return jsonify({
-            'resources': [res.to_meta_dict() for res in resources],
+            'resources': SQLiteResource.resources_to_meta_list(resources),
             'total_resources': len(resources),
             'items_per_page': 0,
         })
@@ -43,7 +43,7 @@ def show_resource_list(): # order by added date
         page = max(0, page-1)
         resources = connector.get_resources_by_page(page, ITEMS_PER_PAGE)
         return jsonify({
-            'resources': [res.to_meta_dict() for res in resources],
+            'resources': SQLiteResource.resources_to_meta_list(resources),
             'total_resources': connector.total_resources,
             'items_per_page': ITEMS_PER_PAGE,
         })
