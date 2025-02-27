@@ -30,12 +30,14 @@
 <script>
 import MarkdownPage from '../modules/MarkdownPage.vue';
 import MermaidDiagram from '../modules/MermaidDiagram.vue';
+import ImageBrowser from '../modules/ImageBrowser.vue';
 import TagAdder from './TagAdder.vue';
 
 export default {
   components: {
     MarkdownPage,
     MermaidDiagram,
+    ImageBrowser,
   },
   data() {
     return {
@@ -53,6 +55,7 @@ export default {
       AvailableModules: [
         { title: "Markdown", vueName: "MarkdownPage" },
         { title: "Mermaid Diagram", vueName: "MermaidDiagram" },
+        { title: "Image Browser", vueName: "ImageBrowser" },
       ],
     }
   },
