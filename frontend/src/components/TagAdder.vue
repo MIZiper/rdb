@@ -8,7 +8,7 @@
       @input="onChange(search)" :loading="loading">
       <v-menu activator="parent" :close-on-content-click="false">
         <v-list>
-          <v-list-item v-for="(tag, index) in filteredTags" :key="index" @click="selectTag(tag)">
+          <v-list-item v-for="(tag, index) in filteredTags" :key="index" @click="selectTag(tag, $event)">
             <v-list-item-title>{{ tag }}</v-list-item-title>
           </v-list-item>
         </v-list>
@@ -72,13 +72,9 @@ export default {
         this.onChange(this.search);
       }
     },
-    selectTag(tag) {
+    selectTag(tag, event) {
       const { parent: parentTag, leaf: childTag } = this.getParentAndLeaf(this.search);
-      if (parentTag) {
-        this.search = `${parentTag}:${tag}`;
-      } else {
-        this.search = tag;
-      }
+      this.search = `${parentTag ? parentTag + ':' : ''}${tag}${event.ctrlKey ? ':' : ''}`;
       this.$nextTick(() => {
         this.$refs.searchField.focus();
       });
