@@ -15,6 +15,7 @@
 import ContentInfoCard from './ContentInfoCard.vue';
 import MarkdownPage from '../modules/MarkdownPage.vue';
 import MermaidDiagram from '../modules/MermaidDiagram.vue';
+import { API_BASE_URL } from '../config';
 
 export default {
   components: {
@@ -31,7 +32,7 @@ export default {
   },
   created() {
     const resourceId = this.$route.params.resource_id;
-    fetch(`http://localhost:5428/resources/${resourceId}`)
+    fetch(`${API_BASE_URL}/resources/${resourceId}`)
       .then(response => response.json())
       .then(data => {
         this.resource = data;

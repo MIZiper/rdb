@@ -32,6 +32,7 @@ import MarkdownPage from '../modules/MarkdownPage.vue';
 import MermaidDiagram from '../modules/MermaidDiagram.vue';
 import ImageBrowser from '../modules/ImageBrowser.vue';
 import TagAdder from './TagAdder.vue';
+import { API_BASE_URL } from '../config';
 
 export default {
   components: {
@@ -68,7 +69,7 @@ export default {
       }
       this.resource.tags = this.$refs.tagAdder.selectedTags;
 
-      const response = await fetch('http://localhost:5428/resources', {
+      const response = await fetch(`${API_BASE_URL}/resources`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

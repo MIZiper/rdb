@@ -19,6 +19,7 @@
 <script>
 import axios from 'axios';
 import { getTagColor } from './utils'; // Import the getTagColor function
+import { API_BASE_URL } from '../config';
 
 export default {
   data() {
@@ -39,7 +40,7 @@ export default {
       }
       this.loading = true;
       try {
-        const response = await axios.get(`http://localhost:5428/tags/${parentTag}`);
+        const response = await axios.get(`${API_BASE_URL}/tags/${parentTag}`);
         this.childrenTags = response.data;
         this.tagCache[parentTag] = response.data;
       } catch (error) {
