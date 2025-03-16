@@ -1,5 +1,5 @@
 # Stage 1: Build the frontend
-FROM node:14 AS frontend-builder
+FROM node:22-slim AS frontend-builder
 WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm install
@@ -12,6 +12,7 @@ WORKDIR /app
 
 # Copy the built frontend files
 COPY --from=frontend-builder /app/dist /app/frontend/dist
+RUN mkdir /app/storage
 
 # Copy the Python script and API files
 COPY backend/ /app/backend/
