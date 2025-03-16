@@ -1,24 +1,22 @@
-from flask import Flask, jsonify, request
+from flask import Blueprint, jsonify, request
 from flask_cors import CORS
 import atexit
 
 from rtm import TagStr, TagStrFull, Manager, Resource, TAG_SPLITTER
 from rdb import SQLiteResourceConnector, SQLiteResource
 
-app = Flask(__name__)
-CORS(app)
+api = Blueprint('api', __name__)
+CORS(api)
 tag_manager = manager = Manager()
 connector: SQLiteResourceConnector = None
 
-
-
-@app.route("/tags", defaults={'tag': ''}, methods=['GET']) # equal to `/tags/<empty>`
-@app.route("/tags/", defaults={'tag': ''}, methods=['GET'])
-@app.route("/tags/<string:tag>", methods=['GET']) # list-sub
+@api.route("/tags", defaults={'tag': ''}, methods=['GET']) # equal to `/tags/<empty>`
+@api.route("/tags/", defaults={'tag': ''}, methods=['GET'])
+@api.route("/tags/<string:tag>", methods=['GET']) # list-sub
 def list_tags_of(tag: TagStrFull):
     return manager.get_tags_of(tag)
 
-@app.route("/tags", methods=['POST']) # create
+@api.route("/tags", methods=['POST']) # create
 def create_tag():
     tag = request.json.get('tag')
     if not tag:
@@ -26,7 +24,7 @@ def create_tag():
     manager.add_tag(tag)
     return jsonify({'message': 'Tag created successfully'}), 201
 
-@app.route("/resources", methods=['GET'])
+@api.route("/resources", methods=['GET'])
 def show_resource_list(): # order by added date
     tags = request.args.get('tags', '', type=str)
     if tags: # not empty tags, nor no-tags-key # /resources?tags=...
@@ -48,7 +46,7 @@ def show_resource_list(): # order by added date
             'items_per_page': ITEMS_PER_PAGE,
         })
 
-@app.route("/resources/<string:resource>", methods=['GET'])
+@api.route("/resources/<string:resource>", methods=['GET'])
 def show_resource(resource: str):
     res_id = int(resource)
     resource_obj = connector.get_resource(res_id)
@@ -56,7 +54,7 @@ def show_resource(resource: str):
         return jsonify({'error': 'Resource not found'}), 404
     return jsonify(resource_obj.to_detail_dict())
 
-@app.route("/resources", methods=['POST'])
+@api.route("/resources", methods=['POST'])
 def add_resource_with_tags():
     data = request.json
     if not data or 'name' not in data:
@@ -71,15 +69,17 @@ def add_resource_with_tags():
     manager.add_resource(resource)
     return jsonify({'message': 'Resource created successfully'}), 201
 
-
-
-if __name__=="__main__":
+def init_connector():
     from os import path
-    import random
-
     db_path = path.join(path.dirname(__file__), '../storage/resources.db')
+    global connector
     connector = SQLiteResourceConnector(manager, db_path)
     connector.load_resources()
-
     atexit.register(connector.close)
+
+if __name__=="__main__":
+    from flask import Flask
+    app = Flask(__name__)
+    app.register_blueprint(api, url_prefix='/api')
+    init_connector()
     app.run(host="localhost", port="5428", debug=True)
