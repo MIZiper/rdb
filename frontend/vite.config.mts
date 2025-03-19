@@ -26,6 +26,7 @@ export default defineConfig({
       },
     }),
   ],
+  // base: '/rdb/',
   define: { 'process.env': {} },
   resolve: {
     alias: {

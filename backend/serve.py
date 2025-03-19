@@ -2,6 +2,10 @@ from flask import Flask, send_from_directory
 from app import api, init_connector
 import os
 
+site_prefix = "" # "/rdb" #
+api_prefix = "/api"
+_N = len(site_prefix) + len(api_prefix)
+
 app = Flask(__name__, static_folder='../frontend/dist')
 
 # Initialize the connector
