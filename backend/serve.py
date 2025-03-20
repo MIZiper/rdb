@@ -1,5 +1,5 @@
 from flask import Flask, send_from_directory
-from app import api, init_connector
+from api import api, init_connector
 import os
 
 site_prefix = "" # "/rdb" #

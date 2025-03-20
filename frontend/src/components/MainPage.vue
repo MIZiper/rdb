@@ -15,7 +15,7 @@
 import ContentInfoCard from './ContentInfoCard.vue';
 import MarkdownPage from '../modules/MarkdownPage.vue';
 import MermaidDiagram from '../modules/MermaidDiagram.vue';
-import { API_BASE_URL } from '../config';
+import { apiClient } from '../config';
 
 export default {
   components: {
@@ -32,12 +32,11 @@ export default {
   },
   created() {
     const resourceId = this.$route.params.resource_id;
-    fetch(`${API_BASE_URL}/resources/${resourceId}`)
-      .then(response => response.json())
-      .then(data => {
+    apiClient.get(`/resources/${resourceId}`)
+      .then(response => {
+        const data = response.data;
         this.resource = data;
         this.responseData = data.content; // Assuming the content is part of the resource data
-
         this.dynamicComponent = data.type;
       })
       .catch(error => {

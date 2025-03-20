@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import { API_BASE_URL } from '../config';
+import { apiClient } from '../config';
 
 export default {
     data() {
@@ -58,8 +58,7 @@ export default {
                 formData.append(`remarks[${index}]`, picture.remark);
             });
 
-            const response = await fetch(`${API_BASE_URL}/upload`, {
-                method: 'POST',
+            const response = await apiClient.post(`/upload`, {
                 body: formData,
             });
 

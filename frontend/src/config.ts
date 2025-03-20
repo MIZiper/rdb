@@ -1,2 +1,9 @@
-// Define base URL for API
-export const API_BASE_URL = '/api';
+import axios from 'axios';
+
+// Shared Axios instance
+export const apiClient = axios.create({
+  baseURL: "/api",
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});

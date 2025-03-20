@@ -10,7 +10,7 @@
 <script>
 import TagAdder from './TagAdder.vue';
 import ResourceList from './ResourceList.vue';
-import { API_BASE_URL } from '../config';
+import { apiClient } from '../config';
 
 export default {
   components: {
@@ -25,8 +25,8 @@ export default {
       }
       window.history.replaceState(null, '', `/search?tags=${tags}`);
       try {
-        const response = await fetch(`${API_BASE_URL}/resources?tags=${tags}`);
-        const data = await response.json();
+        const response = await apiClient.get(`/resources?tags=${tags}`);
+        const data = response.data;
         // data['items_per_page'] can be [0, int)
         this.$refs.resourceList.setResults(data, this.fetchResources, 1);
       } catch (error) {
@@ -34,11 +34,11 @@ export default {
       }
     },
     async fetchResources(page = 1) {
-      const url = `${API_BASE_URL}/resources?page=${page}`;
+      const url = `/resources?page=${page}`;
       window.history.replaceState(null, '', `/search`);
       try {
-        const response = await fetch(url);
-        const data = await response.json();
+        const response = await apiClient.get(url);
+        const data = response.data;
         // data['items_per_page'] > 0
         this.$refs.resourceList.setResults(data, this.fetchResources, page);
       } catch (error) {

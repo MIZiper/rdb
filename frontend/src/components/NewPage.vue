@@ -32,7 +32,7 @@ import MarkdownPage from '../modules/MarkdownPage.vue';
 import MermaidDiagram from '../modules/MermaidDiagram.vue';
 import ImageBrowser from '../modules/ImageBrowser.vue';
 import TagAdder from './TagAdder.vue';
-import { API_BASE_URL } from '../config';
+import { apiClient } from '../config';
 
 export default {
   components: {
@@ -69,19 +69,13 @@ export default {
       }
       this.resource.tags = this.$refs.tagAdder.selectedTags;
 
-      const response = await fetch(`${API_BASE_URL}/resources`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(this.resource),
-      });
-      if (response.ok) {
-        // Handle successful submission
-        console.log('Resource created successfully');
-      } else {
-        // Handle error
-        console.error('Error creating resource');
+      try {
+        const response = await apiClient.post('/resources', this.resource);
+        if (response.status === 200) {
+          console.log('Resource created successfully');
+        }
+      } catch (error) {
+        console.error('Error creating resource', error);
       }
     },
   },
