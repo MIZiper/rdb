@@ -2,10 +2,12 @@
 
 ![RDB Logo](./doc/logo.png)
 
-Result database, with managed scoped tag system.
+Resource database, with managed scoped tag system.
 
-- Result database: data storage for various type resources, mainly for stats
+- Resource database: data storage for various type resources, mainly for stats
 - Managed scoped tag system: attach resource with tags managed by user
+
+![RDB screenshot](./doc/images/screenshot.png)
 
 ## Elements
 
@@ -13,6 +15,8 @@ Result database, with managed scoped tag system.
 
 Scoped tag is under user's management, and can be used to filter resources.
 
-### Result data
+When filtering with parent tag, the children tagged resources are also included.
 
-## Concepts
+### Resource data
+
+Resource items can be in different types, displayed accordingly.
