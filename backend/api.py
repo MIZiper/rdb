@@ -4,7 +4,7 @@ import atexit
 
 from rtm import TagStr, TagStrFull, Manager, Resource, TAG_SPLITTER
 from rdb import SQLiteResourceConnector, SQLiteResource
-from modules import ResourceContentHandler
+from res_modules import ResourceContentHandler
 
 api = Blueprint('api', __name__)
 CORS(api)
@@ -72,8 +72,9 @@ def add_resource_with_tags():
 
 def register_module_apis(api_blueprint):
     """Dynamically register APIs for all modules."""
-    for module_type in ResourceContentHandler._registry.keys():
-        ResourceContentHandler.register_api(api_blueprint, module_type)
+    for module_name, handler_cls in ResourceContentHandler._registry.items():
+        # Dynamically call the register_api method of the handler class
+        handler_cls.register_api(api_blueprint, module_name)
 
 # Register module APIs dynamically
 register_module_apis(api)

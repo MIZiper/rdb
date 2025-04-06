@@ -3,7 +3,7 @@ from flask import request
 
 class ResourceContentHandler:
     """Base class for handling resource content based on type."""
-    _registry = {}
+    _registry: dict[str, type["ResourceContentHandler"]] = {}
 
     def __init__(self, content: str):
         self.content = content
@@ -15,26 +15,20 @@ class ResourceContentHandler:
         raise NotImplementedError
 
     @classmethod
-    def register_handler(cls, resource_type: str, handler_cls: type):
-        cls._registry[resource_type] = handler_cls
+    def register_handler(cls, module_name: str, handler_cls: type):
+        # module_name can be different for one handler
+        # e.g. one resource type can be used for multiple modules
+        cls._registry[module_name] = handler_cls
 
     @classmethod
-    def get_handler(cls, resource_type: str, content: str):
-        handler_cls = cls._registry.get(resource_type, cls)
+    def get_handler(cls, module_name: str, content: str):
+        handler_cls = cls._registry.get(module_name, cls)
         return handler_cls(content)
 
     @classmethod
-    def register_api(cls, blueprint, module_type: str):
-        """Register API routes for the module."""
-        handler_cls = cls._registry.get(module_type)
-        if not handler_cls:
-            raise ValueError(f"No handler registered for module type: {module_type}")
-
-        @blueprint.route(f"/modules/{module_type}/action", methods=['POST'])
-        def module_action():
-            handler = handler_cls("")
-            response, status_code = handler.handle_request()
-            return response, status_code
+    def register_api(cls, blueprint, module_name: str):
+        """Base method for registering API routes. Subclasses should override this."""
+        pass
 
 
 class MarkdownHandler(ResourceContentHandler):
@@ -77,11 +71,11 @@ class ImageBrowserHandler(ResourceContentHandler):
             return {"message": f"File saved to {file_path}"}, 201
 
     @classmethod
-    def register_api(cls, blueprint, module_type: str):
+    def register_api(cls, blueprint, module_name: str):
         """Register API routes for the ImageBrowser module."""
-        @blueprint.route(f"/modules/{module_type}/upload", methods=['POST'])
+        @blueprint.route(f"/modules/{module_name}/upload", methods=['POST'])
         def upload():
-            handler = cls("")
+            handler = cls("", storage_path=module_name)
             response, status_code = handler.handle_request()
             return response, status_code
 
