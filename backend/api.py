@@ -4,6 +4,7 @@ import atexit
 
 from rtm import TagStr, TagStrFull, Manager, Resource, TAG_SPLITTER
 from rdb import SQLiteResourceConnector, SQLiteResource
+from modules import ResourceContentHandler
 
 api = Blueprint('api', __name__)
 CORS(api)
@@ -68,6 +69,14 @@ def add_resource_with_tags():
     
     manager.add_resource(resource)
     return jsonify({'message': 'Resource created successfully'}), 201
+
+def register_module_apis(api_blueprint):
+    """Dynamically register APIs for all modules."""
+    for module_type in ResourceContentHandler._registry.keys():
+        ResourceContentHandler.register_api(api_blueprint, module_type)
+
+# Register module APIs dynamically
+register_module_apis(api)
 
 def init_connector():
     from os import path

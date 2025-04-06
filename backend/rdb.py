@@ -10,7 +10,7 @@ from sqlalchemy import Column, String, DateTime, BINARY, create_engine, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-
+from modules import ResourceContentHandler
 
 Base = declarative_base()
 
@@ -40,15 +40,17 @@ META_FIELDS = (R.UUID, R.Title, R.Tags, R.UpdateDate, R.Description) # for resou
 
 
 class SQLiteResource(Resource):
-    def __init__(self, id: int, name: str, tags_str: TagsFullStr, session):
+    def __init__(self, id: int, name: str, tags_str: TagsFullStr, session, content: str = "", resource_type: str = ""):
         super().__init__(res_id=id, tags_str=tags_str)
         self.id = id
         self.name = name
         self.session = session
+        self.resource_type = resource_type
+        self.content_handler = ResourceContentHandler.get_handler(resource_type, content)
 
-    def __str__(self):
-        return f"SQLiteResource<{self.name} @ {self.id}>"
-    
+    def get_parsed_content(self):
+        return self.content_handler.parse()
+
     def flush_tags_update(self):
         resource = self.session.query(ResultRecord).filter_by(UUID=self.id).first()
         resource.Tags = self.tags_str
@@ -81,7 +83,7 @@ class SQLiteResource(Resource):
             'description': resource.Description,
             'type': resource.ModuleInfo,
             'link': resource.Link,
-            'content': resource.Content
+            'content': self.get_parsed_content()
         }
     
     @staticmethod
