@@ -4,7 +4,7 @@ import atexit
 
 from rtm import TagStr, TagStrFull, Manager, Resource, TAG_SPLITTER
 from rdb import SQLiteResourceConnector, SQLiteResource
-from res_modules import ResourceContentHandler
+from modules import ResourceContentHandler
 
 api = Blueprint('api', __name__)
 CORS(api)
