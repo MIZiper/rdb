@@ -226,16 +226,3 @@ class Manager:
 
         for sub_node in node.sub_nodes.values():
             self.tree_print(sub_node, depth=depth+1)
-
-class ResourceConnector:
-    def __init__(self, manager: Manager):
-        self.manager = manager
-
-    def load_resources(self):
-        ...
-
-    def save_resources(self):
-        ...
-
-    def new_resource(self, name: str, tags_str: TagsFullStr) -> Resource:
-        ...

@@ -2,14 +2,14 @@ from flask import Blueprint, jsonify, request
 from flask_cors import CORS
 import atexit
 
-from rtm import TagStr, TagStrFull, Manager, Resource, TAG_SPLITTER
-from rdb import SQLiteResourceConnector, SQLiteResource
-from modules import ResourceContentHandler
+from rtm import TagStrFull, Manager, TAG_SPLITTER
+from modules import RecordContentHandler
+from rdb import SQLiteController
 
 api = Blueprint('api', __name__)
 CORS(api)
 tag_manager = manager = Manager()
-connector: SQLiteResourceConnector = None
+controller: SQLiteController = None
 
 @api.route("/tags", defaults={'tag': ''}, methods=['GET']) # equal to `/tags/<empty>`
 @api.route("/tags/", defaults={'tag': ''}, methods=['GET'])
@@ -29,75 +29,83 @@ def create_tag():
 def show_resource_list(): # order by added date
     tags = request.args.get('tags', '', type=str)
     if tags: # not empty tags, nor no-tags-key # /resources?tags=...
-        t_resources = manager.filter_resources(tags.split(TAG_SPLITTER))
-        resources = connector.get_resources_by_ids([t_res.res_id for t_res in t_resources])
+        resources = manager.filter_resources(tags.split(TAG_SPLITTER))
+        records = controller.get_meta_records_by_ids([res.res_id for res in resources])
         return jsonify({
-            'resources': SQLiteResource.resources_to_meta_list(resources),
-            'total_resources': len(resources),
+            'resources': [rec.to_meta_dict() for rec in records],
+            'total_resources': len(records),
             'items_per_page': 0,
         })
     else: # /resources, /resources?page=..., /resources?tags=<empty>
         ITEMS_PER_PAGE = 9
         page = request.args.get('page', 1, type=int)
         page = max(0, page-1)
-        resources = connector.get_resources_by_page(page, ITEMS_PER_PAGE)
+        records = controller.get_meta_records_by_page(page, ITEMS_PER_PAGE)
         return jsonify({
-            'resources': SQLiteResource.resources_to_meta_list(resources),
-            'total_resources': connector.total_resources,
+            'resources': [rec.to_meta_dict() for rec in records],
+            'total_resources': controller.total_resources,
             'items_per_page': ITEMS_PER_PAGE,
         })
 
 @api.route("/resources/<string:resource>", methods=['GET'])
 def show_resource(resource: str):
     res_id = int(resource)
-    resource_obj = connector.get_resource(res_id)
+    record = controller.get_full_record_by_id(res_id)
     
-    handler = ResourceContentHandler.get_handler(resource_obj.ModuleInfo, resource_obj.Content)
+    handler = RecordContentHandler.get_handler(record.ModuleInfo, record.Content)
     content = handler.to_client()
 
-    if not resource_obj:
+    rec_dict = record.to_detail_dict()
+    rec_dict['content'] = content
+
+    if not record:
         return jsonify({'error': 'Resource not found'}), 404
-    return jsonify(resource_obj.to_detail_dict())
+    return jsonify(rec_dict)
 
 @api.route("/resources", methods=['POST'])
 def add_resource_with_tags():
-    data = request.json
-    if not data or 'name' not in data:
-        return jsonify({'error': 'Resource name is required'}), 400
+    data: dict = request.json
+    if not data or 'title' not in data:
+        return jsonify({'error': 'Resource title is required'}), 400
     
-    tags = TAG_SPLITTER.join(data.get('tags', []))  # Optional tags string (tag1;;tag2;;tag3)
-    resource = connector.new_resource(
-        data['name'], tags,
-        data.get('description', ''), data.get('link', ''), data.get('content', ''), data.get('type', '')
-    )
+    module_info = data.get('module', '')
+    client_content = data.get('content', '')
 
-    handler = ResourceContentHandler.get_handler(resource.ModuleInfo, resource.Content)
+    handler = RecordContentHandler.get_handler(module_info, client_content)
     handler.handle_request()
-    content = handler.to_database()
+    db_content = handler.to_database()
+    # actual_module = ...
+
+    record = controller.new_resource(
+        data['title'], data.get('tags', ''),
+        data.get('description', ''), data.get('link', ''), db_content, module_info,
+    )
     
-    manager.add_resource(resource)
-    return jsonify({'message': 'Resource created successfully'}), 201
+    return jsonify({
+        'message': 'Resource created successfully',
+        'uuid': record.UUID,
+    }), 201
 
 def register_module_apis(api_blueprint):
     """Dynamically register APIs for all modules."""
-    for module_name, handler_cls in ResourceContentHandler._registry.items():
+    for module_name, handler_cls in RecordContentHandler._registry.items():
         # Dynamically call the register_api method of the handler class
         handler_cls.register_api(api_blueprint, module_name)
 
 # Register module APIs dynamically
 register_module_apis(api)
 
-def init_connector():
+def init_controller():
     from os import path
     db_path = path.join(path.dirname(__file__), '../storage/resources.db')
-    global connector
-    connector = SQLiteResourceConnector(manager, db_path)
-    connector.load_resources()
-    atexit.register(connector.close)
+    global controller
+    controller = SQLiteController(manager, db_path)
+    controller.load_resources()
+    atexit.register(controller.close)
 
 if __name__=="__main__":
     from flask import Flask
     app = Flask(__name__)
     app.register_blueprint(api, url_prefix='/api')
-    init_connector()
+    init_controller()
     app.run(host="localhost", port="5428", debug=True)

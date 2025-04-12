@@ -2,9 +2,9 @@ import os
 from typing import Any
 from flask import request
 
-class ResourceContentHandler:
+class RecordContentHandler:
     """Base class for handling resource content based on type."""
-    _registry: dict[str, type["ResourceContentHandler"]] = {}
+    _registry: dict[str, type["RecordContentHandler"]] = {}
 
     def __init__(self, content: str):
         self.content = content
@@ -14,6 +14,9 @@ class ResourceContentHandler:
 
     def to_database(self) -> str:
         raise NotImplementedError
+    
+    def handle_request(self):
+        pass
 
     @classmethod
     def register_handler(cls, module_name: str, handler_cls: type):
@@ -31,17 +34,17 @@ class ResourceContentHandler:
         """Base method for registering API routes. Subclasses should override this."""
         pass
 
-class RawHandler(ResourceContentHandler):
+class RawHandler(RecordContentHandler):
     # store raw string into sqlite
     # and return raw string as well
     pass
 
-class JsonHandler(ResourceContentHandler):
+class JsonHandler(RecordContentHandler):
     # store json string into sqlite
     # and return content as json
     pass
 
-class ImageBrowserHandler(ResourceContentHandler):
+class ImageBrowserHandler(RecordContentHandler):
     def __init__(self, content: str, storage_path: str = "./image_storage"):
         super().__init__(content)
         self.storage_path = storage_path
@@ -80,5 +83,5 @@ class ImageBrowserHandler(ResourceContentHandler):
 
 
 # Register handlers dynamically
-ResourceContentHandler.register_handler("Markdown", RawHandler)
-ResourceContentHandler.register_handler("ImageBrowser", ImageBrowserHandler)
+RecordContentHandler.register_handler("Markdown", RawHandler)
+RecordContentHandler.register_handler("ImageBrowser", ImageBrowserHandler)

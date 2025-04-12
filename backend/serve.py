@@ -1,5 +1,5 @@
 from flask import Flask, send_from_directory
-from api import api, init_connector
+from api import api, init_controller
 import os
 
 site_prefix = "" # "/rdb" #
@@ -9,7 +9,7 @@ _N = len(site_prefix) + len(api_prefix)
 app = Flask(__name__, static_folder='../frontend/dist')
 
 # Initialize the connector
-init_connector()
+init_controller()
 
 # Register the API blueprint
 app.register_blueprint(api, url_prefix='/api')
