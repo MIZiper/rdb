@@ -51,6 +51,10 @@ def show_resource_list(): # order by added date
 def show_resource(resource: str):
     res_id = int(resource)
     resource_obj = connector.get_resource(res_id)
+    
+    handler = ResourceContentHandler.get_handler(resource_obj.ModuleInfo, resource_obj.Content)
+    content = handler.to_client()
+
     if not resource_obj:
         return jsonify({'error': 'Resource not found'}), 404
     return jsonify(resource_obj.to_detail_dict())
@@ -66,6 +70,10 @@ def add_resource_with_tags():
         data['name'], tags,
         data.get('description', ''), data.get('link', ''), data.get('content', ''), data.get('type', '')
     )
+
+    handler = ResourceContentHandler.get_handler(resource.ModuleInfo, resource.Content)
+    handler.handle_request()
+    content = handler.to_database()
     
     manager.add_resource(resource)
     return jsonify({'message': 'Resource created successfully'}), 201

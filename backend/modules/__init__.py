@@ -1,4 +1,5 @@
 import os
+from typing import Any
 from flask import request
 
 class ResourceContentHandler:
@@ -8,10 +9,10 @@ class ResourceContentHandler:
     def __init__(self, content: str):
         self.content = content
 
-    def parse(self):
+    def to_client(self) -> Any:
         raise NotImplementedError
 
-    def store(self):
+    def to_database(self) -> str:
         raise NotImplementedError
 
     @classmethod
@@ -30,17 +31,15 @@ class ResourceContentHandler:
         """Base method for registering API routes. Subclasses should override this."""
         pass
 
+class RawHandler(ResourceContentHandler):
+    # store raw string into sqlite
+    # and return raw string as well
+    pass
 
-class MarkdownHandler(ResourceContentHandler):
-    def parse(self):
-        # Example: Convert Markdown to HTML
-        import markdown
-        return markdown.markdown(self.content)
-
-    def store(self):
-        # Store content as plain Markdown
-        return self.content
-
+class JsonHandler(ResourceContentHandler):
+    # store json string into sqlite
+    # and return content as json
+    pass
 
 class ImageBrowserHandler(ResourceContentHandler):
     def __init__(self, content: str, storage_path: str = "./image_storage"):
@@ -48,11 +47,11 @@ class ImageBrowserHandler(ResourceContentHandler):
         self.storage_path = storage_path
         os.makedirs(self.storage_path, exist_ok=True)
 
-    def parse(self):
+    def to_client(self) -> list[dict]:
         # Example: Return a list of image URLs
         return self.content.splitlines()
 
-    def store(self):
+    def to_database(self) -> str:
         # Store content as newline-separated image URLs
         return self.content
 
@@ -81,5 +80,5 @@ class ImageBrowserHandler(ResourceContentHandler):
 
 
 # Register handlers dynamically
-ResourceContentHandler.register_handler("Markdown", MarkdownHandler)
+ResourceContentHandler.register_handler("Markdown", RawHandler)
 ResourceContentHandler.register_handler("ImageBrowser", ImageBrowserHandler)
