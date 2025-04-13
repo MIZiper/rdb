@@ -37,7 +37,7 @@ export default {
         const data = response.data;
         this.resource = data;
         this.responseData = data.content; // Assuming the content is part of the resource data
-        this.dynamicComponent = data.type;
+        this.dynamicComponent = data.module;
       })
       .catch(error => {
         console.error('Error fetching resource:', error);

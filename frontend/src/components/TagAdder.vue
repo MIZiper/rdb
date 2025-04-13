@@ -19,6 +19,7 @@
 <script>
 import { apiClient } from '../config';
 import { getTagColor } from './utils'; // Import the getTagColor function
+import { TAG_HIER } from '../config';
 
 export default {
   data() {
@@ -53,15 +54,15 @@ export default {
       const { parent: parentTag, leaf: childTag } = this.getParentAndLeaf(val);
       await this.fetchTags(parentTag);
 
-      if (childTag=='') { // endswith(':') or val==''
+      if (childTag=='') { // endswith(TAG_HIER) or val==''
         this.filteredTags = this.childrenTags;
       } else {
         this.filteredTags = this.childrenTags.filter(tag => tag.includes(childTag));
       }
     },
     getParentAndLeaf(fullTag) {
-      const parts = fullTag.split(':');
-      const parent = parts.slice(0, -1).join(':');
+      const parts = fullTag.split(TAG_HIER);
+      const parent = parts.slice(0, -1).join(TAG_HIER);
       const leaf = parts[parts.length - 1];
       return { parent, leaf };
     },
@@ -74,7 +75,7 @@ export default {
     },
     selectTag(tag, event) {
       const { parent: parentTag, leaf: childTag } = this.getParentAndLeaf(this.search);
-      this.search = `${parentTag ? parentTag + ':' : ''}${tag}${event.ctrlKey ? ':' : ''}`;
+      this.search = `${parentTag ? parentTag + TAG_HIER : ''}${tag}${event.ctrlKey ? TAG_HIER : ''}`;
       this.$nextTick(() => {
         this.$refs.searchField.focus();
       });

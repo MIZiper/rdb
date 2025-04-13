@@ -24,7 +24,7 @@
         <v-row>
           <v-col>
             <a :href="`/resources/${result.uuid || ''}`">
-              <v-list-item-title>{{ result.name }}</v-list-item-title>
+              <v-list-item-title>{{ result.title }}</v-list-item-title>
             </a>
           </v-col>
           <v-col cols="auto">
@@ -34,7 +34,7 @@
         </v-row>
         <v-list-item-subtitle class="ma-3">{{ result.description || '[No description]' }}</v-list-item-subtitle>
         <v-row class="ma-0">
-          <a v-for="(tag, tagIndex) in result.tags" :key="tagIndex" :href="`/search?tags=${tag}`">
+          <a v-for="(tag, tagIndex) in result.tags.split(TAG_SPLITTER)" :key="tagIndex" :href="`/search?tags=${tag}`">
             <v-chip :color="getTagColor(tag)" class="mr-1 mb-1">
               {{ tag }}
             </v-chip>
@@ -50,6 +50,7 @@
 
 <script>
 import { getTagColor } from './utils'; // Import the getTagColor function
+import { TAG_SPLITTER } from '../config';
 
 export default {
   data() {

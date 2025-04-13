@@ -10,7 +10,7 @@
 <script>
 import TagAdder from './TagAdder.vue';
 import ResourceList from './ResourceList.vue';
-import { apiClient } from '../config';
+import { apiClient, TAG_SPLITTER } from '../config';
 
 export default {
   components: {
@@ -21,7 +21,7 @@ export default {
     async searchResourcesByTags(tags = null) {
       if (tags == null) {
         const selectedTags = this.$refs.tagAdder.selectedTags;
-        tags = selectedTags.join(';;');
+        tags = selectedTags.join(TAG_SPLITTER);
       }
       window.history.replaceState(null, '', `/search?tags=${tags}`);
       try {

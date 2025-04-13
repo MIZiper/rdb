@@ -9,7 +9,7 @@
         <v-card>
           <v-card-title>New Resource</v-card-title>
           <v-card-text>
-            <v-text-field density="compact" v-model="resource.name" label="Name"></v-text-field>
+            <v-text-field density="compact" v-model="resource.title" label="Title"></v-text-field>
             <v-text-field density="compact" v-model="resource.link" label="Link"></v-text-field>
             <v-textarea density="compact" v-model="resource.description" label="Description"></v-textarea>
 
@@ -32,7 +32,7 @@ import MarkdownPage from '../modules/MarkdownPage.vue';
 import MermaidDiagram from '../modules/MermaidDiagram.vue';
 import ImageBrowser from '../modules/ImageBrowser.vue';
 import TagAdder from './TagAdder.vue';
-import { apiClient } from '../config';
+import { apiClient, TAG_SPLITTER } from '../config';
 
 export default {
   components: {
@@ -43,12 +43,12 @@ export default {
   data() {
     return {
       resource: {
-        name: '',
+        title: '',
         link: 'https://github.com/MIZiper/rdb.git',
         description: '',
-        tags: [],
+        tags: '',
 
-        type: undefined,
+        module: undefined,
         content: null,
       },
       dynamicComponent: null,
@@ -64,10 +64,10 @@ export default {
     async submitResource() {
       // validate resource
       if (this.dynamicComponent != null) {
-        this.resource.type = this.dynamicComponent;
+        this.resource.module = this.dynamicComponent;
         this.resource.content = this.$refs.component.editData;
       }
-      this.resource.tags = this.$refs.tagAdder.selectedTags;
+      this.resource.tags = this.$refs.tagAdder.selectedTags.join(TAG_SPLITTER);
 
       try {
         const response = await apiClient.post('/resources', this.resource);

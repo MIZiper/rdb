@@ -1,13 +1,13 @@
 <template>
   <v-card>
-    <v-card-title>{{ resource.name }}</v-card-title>
+    <v-card-title>{{ resource.title }}</v-card-title>
 
     <v-card-text>
       <v-row>
         <v-col cols="12">
           <div class="text-subtitle-1 font-weight-medium">Tags:</div>
           <v-row class="ma-0">
-            <a v-for="(tag, index) in resource.tags" :key="index" :href="`/search?tags=${tag}`">
+            <a v-for="(tag, index) in resource.tags.split(TAG_SPLITTER)" :key="index" :href="`/search?tags=${tag}`">
               <v-chip class="mr-1 mb-1" :color="getTagColor(tag)" variant="outlined">
                 {{ tag }}
               </v-chip>
@@ -43,6 +43,7 @@
 </template>
 
 <script>
+import { TAG_SPLITTER } from '../config';
 import { getTagColor } from './utils';
 
 export default {

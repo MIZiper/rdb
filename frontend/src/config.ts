@@ -7,3 +7,6 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+export const TAG_SPLITTER = ";;";
+export const TAG_HIER = ":";
