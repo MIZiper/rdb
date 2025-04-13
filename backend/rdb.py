@@ -26,27 +26,6 @@ class ResourceRecord(Base):
     Link = Column(String, default='')
     Description = Column(String, default='')
     Content = Column(String, default='')
-
-    def to_detail_dict(self):
-        return {
-            'uuid': self.UUID,
-            'title': self.Title,
-            'tags': self.Tags,
-            'update_date': self.UpdateDate,
-            'description': self.Description,
-            'module': self.ModuleInfo,
-            'link': self.Link,
-            'content': self.Content,
-        }
-    
-    def to_meta_dict(self):
-        return {
-            'uuid': self.UUID,
-            'title': self.Title,
-            'tags': self.Tags,
-            'update_date': self.UpdateDate,
-            'description': self.Description,
-        }
     
 R = ResourceRecord
 LEAN_FIELDS = (R.UUID, R.Title, R.Tags) # for rtm
@@ -121,6 +100,28 @@ class SQLiteController:
     def close(self):
         self.session.close()
 
+    @staticmethod
+    def to_detail_dict(record: ResourceRecord) -> dict:
+        return {
+            'uuid': record.UUID,
+            'title': record.Title,
+            'tags': record.Tags,
+            'update_date': record.UpdateDate,
+            'description': record.Description,
+            'module': record.ModuleInfo,
+            'link': record.Link,
+            'content': record.Content,
+        }
+    
+    @staticmethod
+    def to_meta_dict(record: ResourceRecord) -> dict:
+        return {
+            'uuid': record.UUID,
+            'title': record.Title,
+            'tags': record.Tags,
+            'update_date': record.UpdateDate,
+            'description': record.Description,
+        }
 
 
 if __name__=="__main__":

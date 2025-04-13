@@ -10,10 +10,10 @@ class RecordContentHandler:
         self.content = content
 
     def to_client(self) -> Any:
-        raise NotImplementedError
+        return self.content
 
     def to_database(self) -> str:
-        raise NotImplementedError
+        return self.content
     
     def handle_request(self):
         pass

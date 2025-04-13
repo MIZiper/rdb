@@ -53,6 +53,11 @@ export default {
       required: true,
     },
   },
+  data() {
+    return {
+      TAG_SPLITTER,
+    };
+  },
   methods: {
     getTagColor,
   },

@@ -32,7 +32,7 @@ def show_resource_list(): # order by added date
         resources = manager.filter_resources(tags.split(TAG_SPLITTER))
         records = controller.get_meta_records_by_ids([res.res_id for res in resources])
         return jsonify({
-            'resources': [rec.to_meta_dict() for rec in records],
+            'resources': [controller.to_meta_dict(rec) for rec in records],
             'total_resources': len(records),
             'items_per_page': 0,
         })
@@ -42,7 +42,7 @@ def show_resource_list(): # order by added date
         page = max(0, page-1)
         records = controller.get_meta_records_by_page(page, ITEMS_PER_PAGE)
         return jsonify({
-            'resources': [rec.to_meta_dict() for rec in records],
+            'resources': [controller.to_meta_dict(rec) for rec in records],
             'total_resources': controller.total_resources,
             'items_per_page': ITEMS_PER_PAGE,
         })
@@ -55,7 +55,7 @@ def show_resource(resource: str):
     handler = RecordContentHandler.get_handler(record.ModuleInfo, record.Content)
     content = handler.to_client()
 
-    rec_dict = record.to_detail_dict()
+    rec_dict = controller.to_detail_dict(record)
     rec_dict['content'] = content
 
     if not record:

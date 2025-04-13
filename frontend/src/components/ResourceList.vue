@@ -61,6 +61,7 @@ export default {
       itemsPerPage: 7,
       sortOrder: 'None',
       paginationCB: null,
+      TAG_SPLITTER: TAG_SPLITTER,
     };
   },
   methods: {
