@@ -37,6 +37,9 @@ export default {
         compileMarkdown() {
             this.editHtml = marked(this.editData);
         },
+        async prepareContentForUpload() {
+            return this.editData; // Return markdown content as a string
+        },
     }
 }
 </script>

@@ -43,6 +43,9 @@ export default {
             editContainer.appendChild(preNode);
             mermaid.run();
         },
+        async prepareContentForUpload() {
+            return this.editData; // Return diagram content as a string
+        },
     },
 }
 </script>

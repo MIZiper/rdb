@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_cors import CORS
 import atexit
+import json
 
 from rtm import TagStrFull, Manager, TAG_SPLITTER
 from modules import RecordContentHandler
@@ -51,36 +52,47 @@ def show_resource_list(): # order by added date
 def show_resource(resource: str):
     res_id = int(resource)
     record = controller.get_full_record_by_id(res_id)
+
+    if not record:
+        return jsonify({'error': 'Resource not found'}), 404
     
-    handler = RecordContentHandler.get_handler(record.ModuleInfo, record.Content)
-    content = handler.to_client()
+    handler = RecordContentHandler.get_handler(record.ModuleInfo)
+    content = handler.to_client(record.Content)
 
     rec_dict = controller.to_detail_dict(record)
     rec_dict['content'] = content
 
-    if not record:
-        return jsonify({'error': 'Resource not found'}), 404
     return jsonify(rec_dict)
 
 @api.route("/resources", methods=['POST'])
 def add_resource_with_tags():
-    data: dict = request.json
-    if not data or 'title' not in data:
-        return jsonify({'error': 'Resource title is required'}), 400
-    
-    module_info = data.get('module', '')
-    client_content = data.get('content', '')
+    if request.content_type.startswith('multipart/form-data'):
+        # Parse metadata from FormData
+        metadata = request.form.get('metadata')
+        if metadata:
+            metadata = json.loads(metadata)
+        else:
+            return jsonify({'error': 'Metadata is required'}), 400
 
-    handler = RecordContentHandler.get_handler(module_info, client_content)
-    handler.handle_request()
-    db_content = handler.to_database()
-    # actual_module = ...
+        client_content = request
+    else:
+        # Handle JSON payload
+        metadata = request.json
+        client_content = metadata.get('content', '')
+
+    if not metadata or 'title' not in metadata:
+        return jsonify({'error': 'Resource title is required'}), 400
+
+    module_info = metadata.get('module', '')
+
+    handler = RecordContentHandler.get_handler(module_info)
+    db_content = handler.to_database(client_content)
 
     record = controller.new_resource(
-        data['title'], data.get('tags', ''),
-        data.get('description', ''), data.get('link', ''), db_content, module_info,
+        metadata['title'], metadata.get('tags', ''),
+        metadata.get('description', ''), metadata.get('link', ''), db_content, module_info,
     )
-    
+
     return jsonify({
         'message': 'Resource created successfully',
         'uuid': record.UUID,
@@ -88,9 +100,9 @@ def add_resource_with_tags():
 
 def register_module_apis(api_blueprint):
     """Dynamically register APIs for all modules."""
-    for module_name, handler_cls in RecordContentHandler._registry.items():
-        # Dynamically call the register_api method of the handler class
-        handler_cls.register_api(api_blueprint, module_name)
+    for module_name, handler_obj in RecordContentHandler._registry.items():
+        # Dynamically call the register_api method of the handler object
+        handler_obj.register_api(api_blueprint, module_name)
 
 # Register module APIs dynamically
 register_module_apis(api)

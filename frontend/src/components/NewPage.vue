@@ -65,17 +65,46 @@ export default {
       // validate resource
       if (this.dynamicComponent != null) {
         this.resource.module = this.dynamicComponent;
-        this.resource.content = this.$refs.component.editData;
-      }
-      this.resource.tags = this.$refs.tagAdder.selectedTags.join(TAG_SPLITTER);
 
-      try {
-        const response = await apiClient.post('/resources', this.resource);
-        if (response.status === 200) {
-          console.log('Resource created successfully');
+        // Call the module's prepareContentForUpload method
+        const componentRef = this.$refs.component;
+        const preparedContent = await componentRef.prepareContentForUpload();
+
+        const metadata = {
+          title: this.resource.title,
+          description: this.resource.description,
+          tags: this.$refs.tagAdder.selectedTags.join(TAG_SPLITTER),
+          module: this.resource.module,
+        };
+
+        if (preparedContent instanceof FormData) {
+          // Merge JSON metadata into FormData
+          preparedContent.append('metadata', JSON.stringify(metadata));
+
+          try {
+            const response = await apiClient.post('/resources', preparedContent, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            if (response.status === 200) {
+              console.log('Resource created successfully');
+            }
+          } catch (error) {
+            console.error('Error creating resource', error);
+          }
+        } else {
+          // If content is a string, submit as JSON
+          this.resource.content = preparedContent;
+          this.resource.tags = metadata.tags;
+
+          try {
+            const response = await apiClient.post('/resources', this.resource);
+            if (response.status === 200) {
+              console.log('Resource created successfully');
+            }
+          } catch (error) {
+            console.error('Error creating resource', error);
+          }
         }
-      } catch (error) {
-        console.error('Error creating resource', error);
       }
     },
   },
