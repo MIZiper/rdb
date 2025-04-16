@@ -1,12 +1,13 @@
 <template>
     <template v-if="editMode">
-        <v-file-input multiple accept="image/*" label="Select Images" v-model="pictures" prepend-icon="mdi-image"
-            counter density="compact" @update:modelValue="handleFileChange"></v-file-input>
+        <v-file-input ref="fileInput" multiple accept="image/*" label="Select Images" prepend-icon="mdi-image" counter
+            chips show-size density="compact" @update:modelValue="handleFileChange"></v-file-input>
         <div class="drag-mask" :class="{ dragging: isDragging }" @dragover.prevent="showMask"
-            @dragleave.prevent="hideMask" @drop.prevent="handleDrop">or drop images here</div>
+            @dragleave.prevent="hideMask" @drop.prevent="handleDrop">or drop images here (appending)</div>
         <v-row v-for="(picture, index) in pictures" :key="index">
             <v-col cols="8">
-                <v-img :src="picture.preview" class="mb-2"></v-img>
+                <small>{{ picture.file.name }}</small>
+                <v-img :src="picture.url" class="mb-2"></v-img>
             </v-col>
             <v-col cols="4">
                 <v-textarea v-model="picture.remark" label="Remark" class="mb-2"></v-textarea>
@@ -14,12 +15,11 @@
         </v-row>
     </template>
     <template v-else>
-        <v-row v-for="(picture, index) in pictures" :key="index">
-            <v-card class="mb-2">
-                <v-img :src="picture.preview"></v-img>
-                <v-card-title>{{ picture.remark }}</v-card-title>
-            </v-card>
-        </v-row>
+        <template v-for="(picture, index) in pictures" :key="index">
+            <v-img :src="picture.url"></v-img>
+            <p class="pa-1">{{ picture.remark }}</p>
+            <hr class="mt-2 mb-2" />
+        </template>
     </template>
 </template>
 
@@ -34,29 +34,40 @@ export default {
             type: Boolean,
             default: false,
         },
+        resizeImages: {
+            type: Boolean,
+            default: true, // Enable resizing by default
+        },
     },
     data() {
         return {
-            pictures: [],
+            pictures: [], // {file, url, remark}
             isDragging: false,
         };
     },
     mounted() {
-        if (this.data) {
-            const parsedData = JSON.parse(this.data);
-            this.pictures = parsedData.map(item => ({
-                file: item.file,
-                preview: URL.createObjectURL(item.file),
+        if (this.viewData) {
+            this.pictures = this.viewData.map(item => ({
+                file: null,
+                url: item.url,
                 remark: item.remark,
             }));
         }
     },
     methods: {
-        handleFileChange(files) {
+        async resizeImageAndUrl(file) {
             const MAX_DIMENSION = 1024; // Limit max height or width to 1024px
-            this.pictures = [];
+            return new Promise(resolve => {
+                if (!this.resizeImages) {
+                    // Skip resizing if resizeImages is false
+                    resolve({
+                        file,
+                        url: URL.createObjectURL(file),
+                        remark: '',
+                    });
+                    return;
+                }
 
-            Array.from(files).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = event => {
                     const img = new Image();
@@ -83,9 +94,9 @@ export default {
 
                         canvas.toBlob(blob => {
                             const resizedFile = new File([blob], file.name, { type: file.type });
-                            this.pictures.push({
+                            resolve({
                                 file: resizedFile,
-                                preview: URL.createObjectURL(resizedFile),
+                                url: URL.createObjectURL(resizedFile),
                                 remark: '',
                             });
                         }, file.type);
@@ -95,17 +106,21 @@ export default {
                 reader.readAsDataURL(file);
             });
         },
-        handleDrop(event) {
+        async handleFileChange(files) {
+            this.pictures = [];
+            for (const file of files) {
+                const picture = await this.resizeImageAndUrl(file);
+                this.pictures.push(picture);
+            }
+        },
+        async handleDrop(event) {
             this.isDragging = false;
             const files = event.dataTransfer.files;
-            const newPictures = Array.from(files).map(file => {
-                return {
-                    file,
-                    preview: URL.createObjectURL(file),
-                    remark: '',
-                };
-            });
-            this.pictures = this.pictures.concat(newPictures);
+            for (const file of files) {
+                const picture = await this.resizeImageAndUrl(file);
+                this.pictures.push(picture);
+                this.$refs.fileInput.modelValue.push(file); // will not trigger `handleFileChange`
+            }
         },
         showMask() {
             this.isDragging = true;
@@ -116,8 +131,8 @@ export default {
         async prepareContentForUpload() {
             const formData = new FormData();
             this.pictures.forEach((picture, index) => {
-                formData.append(`files[${index}]`, picture.file);
-                formData.append(`remarks[${index}]`, picture.remark);
+                formData.append(`files[]`, picture.file);
+                formData.append(`remarks[]`, picture.remark);
             });
             return formData; // Return images and remarks as FormData
         },

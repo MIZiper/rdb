@@ -1,5 +1,5 @@
-import os
-import uuid
+import os, uuid, json
+from os import path
 from typing import Any
 from flask import Request, send_from_directory
 from PIL import Image
@@ -55,21 +55,26 @@ class ImageBrowserHandler(RecordContentHandler):
 
     def to_client(self, content: str) -> list[dict]:
         # Return a list of image URLs and remarks
-        return [
-            {
-                "url": line.split('|')[0],
-                "thumbnail": line.split('|')[1],
-                "remark": line.split('|')[2]
-            }
-            for line in self.content.splitlines()
-            if line.strip()
-        ]
+
+        data = json.loads(content)
+        image_urls = []
+        for item in data:
+            image_url = item.get("fname")
+            remark = item.get("remark")
+            if image_url and remark:
+                image_urls.append(
+                    {
+                        "url": f"/api/modules/{self.module_name}/images/{image_url}",
+                        "remark": remark
+                    }
+                )
+        return image_urls
 
     def to_database(self, request: Request) -> str:
         # Store content as newline-separated image URLs, thumbnails, and remarks
 
-        files = request.files.getlist('files')
-        remarks = request.form.getlist('remarks')
+        files = request.files.getlist('files[]')
+        remarks = request.form.getlist('remarks[]')
 
         MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
         saved_files = []
@@ -83,7 +88,7 @@ class ImageBrowserHandler(RecordContentHandler):
             
             file.seek(0)  # Reset file pointer after size check
 
-            unique_filename = f"{uuid.uuid4().hex}"
+            unique_filename = f"{uuid.uuid4().hex}.png"
             file_path = os.path.join(self.storage_path, unique_filename)
             file.save(file_path)
 
@@ -96,19 +101,12 @@ class ImageBrowserHandler(RecordContentHandler):
 
             saved_files.append(
                 {
-                    "url": unique_filename,
-                    "thumbnail": thumbnail_filename,
+                    "fname": unique_filename,
                     "remark": remark
                 }
             )
 
-        content = "\n".join(
-            [
-                f"{file['url']}|{file['thumbnail']}|{file['remark']}"
-                for file in saved_files
-            ]
-        )
-        return content
+        return json.dumps(saved_files)
 
     def register_api(self, blueprint):
         """Register API routes for the ImageBrowser module."""
@@ -120,4 +118,4 @@ class ImageBrowserHandler(RecordContentHandler):
 # Register handlers dynamically
 RecordContentHandler.register_handler(RawHandler("MarkdownPage"))
 RecordContentHandler.register_handler(RawHandler("MermaidDiagram"))
-RecordContentHandler.register_handler(ImageBrowserHandler("ImageBrowser", storage_path="storage/images"))
+RecordContentHandler.register_handler(ImageBrowserHandler("ImageBrowser", storage_path=path.join(path.dirname(__file__), "../../storage/images")))
