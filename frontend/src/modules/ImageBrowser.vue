@@ -26,8 +26,8 @@
 <script>
 export default {
     props: {
-        data: {
-            type: String,
+        viewData: {
+            type: Array,
             required: true,
         },
         editMode: {

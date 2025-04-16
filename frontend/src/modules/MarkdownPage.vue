@@ -13,7 +13,7 @@ import { marked } from 'marked';
 
 export default {
     props: {
-        data: {
+        viewData: {
             type: String,
             required: true,
         },
@@ -30,7 +30,7 @@ export default {
     },
     computed: {
         compiledMarkdown() {
-            return marked(this.data);
+            return marked(this.viewData);
         },
     },
     methods: {

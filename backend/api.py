@@ -80,7 +80,7 @@ def add_resource_with_tags():
         metadata = request.json
         client_content = metadata.get('content', '')
 
-    if not metadata or 'title' not in metadata:
+    if not metadata or not metadata.get('title'):
         return jsonify({'error': 'Resource title is required'}), 400
 
     module_info = metadata.get('module', '')

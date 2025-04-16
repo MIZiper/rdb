@@ -2,7 +2,7 @@
   <v-container>
     <v-row>
       <v-col cols="12" md="8">
-        <component v-if="responseData" :is="dynamicComponent" :data="responseData"></component>
+        <component v-if="responseData" :is="dynamicComponent" :viewData="responseData"></component>
       </v-col>
       <v-col cols="12" md="4">
         <ContentInfoCard v-if="resource" :resource="resource" />
@@ -15,6 +15,7 @@
 import ContentInfoCard from './ContentInfoCard.vue';
 import MarkdownPage from '../modules/MarkdownPage.vue';
 import MermaidDiagram from '../modules/MermaidDiagram.vue';
+import ImageBrowser from '../modules/ImageBrowser.vue';
 import { apiClient } from '../config';
 
 export default {
@@ -22,6 +23,7 @@ export default {
     ContentInfoCard,
     MarkdownPage,
     MermaidDiagram,
+    ImageBrowser,
   },
   data() {
     return {

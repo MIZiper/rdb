@@ -73,6 +73,7 @@ export default {
         const metadata = {
           title: this.resource.title,
           description: this.resource.description,
+          link: this.resource.link,
           tags: this.$refs.tagAdder.selectedTags.join(TAG_SPLITTER),
           module: this.resource.module,
         };

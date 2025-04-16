@@ -6,7 +6,7 @@
         <div id="editContainer"></div>
     </template>
     <div v-else ref="mermaidContainer">
-        <pre class="mermaid">{{ data }}</pre>
+        <pre class="mermaid">{{ viewData }}</pre>
     </div>
 </template>
 
@@ -15,7 +15,7 @@ import mermaid from 'mermaid';
 
 export default {
     props: {
-        data: {
+        viewData: {
             type: String,
             required: true,
         },
