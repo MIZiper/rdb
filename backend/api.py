@@ -100,9 +100,9 @@ def add_resource_with_tags():
 
 def register_module_apis(api_blueprint):
     """Dynamically register APIs for all modules."""
-    for module_name, handler_obj in RecordContentHandler._registry.items():
+    for handler_obj in RecordContentHandler._registry.values():
         # Dynamically call the register_api method of the handler object
-        handler_obj.register_api(api_blueprint, module_name)
+        handler_obj.register_api(api_blueprint)
 
 # Register module APIs dynamically
 register_module_apis(api)

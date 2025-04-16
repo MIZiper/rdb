@@ -8,20 +8,24 @@ class RecordContentHandler:
     """Base class for handling resource content based on type."""
     _registry: dict[str, "RecordContentHandler"] = {}
 
+    def __init__(self, module_name: str):
+        self.module_name = module_name
+
     def to_client(self, content: str) -> Any:
         return content
 
     def to_database(self, content: Any) -> str:
         return content
 
-    def register_api(self, blueprint, module_name: str):
+    def register_api(self, blueprint):
         """Base method for registering API routes. Subclasses should override this."""
         pass
 
     @staticmethod
-    def register_handler(module_name: str, handler_obj: "RecordContentHandler"):
+    def register_handler(handler_obj: "RecordContentHandler"):
         # module_name can be different for one handler type
         # e.g. one resource type can be used for multiple modules
+        module_name = handler_obj.module_name
         if module_name in RecordContentHandler._registry:
             raise ValueError(f"Handler already registered for module: {module_name}")
         RecordContentHandler._registry[module_name] = handler_obj
@@ -44,8 +48,8 @@ class JsonHandler(RecordContentHandler):
     pass
 
 class ImageBrowserHandler(RecordContentHandler):
-    def __init__(self, storage_path: str):
-        super().__init__()
+    def __init__(self, module_name: str, storage_path: str):
+        super().__init__(module_name)
         self.storage_path = storage_path
         os.makedirs(self.storage_path, exist_ok=True)
 
@@ -106,13 +110,14 @@ class ImageBrowserHandler(RecordContentHandler):
         )
         return content
 
-    def register_api(self, blueprint, module_name: str):
+    def register_api(self, blueprint):
         """Register API routes for the ImageBrowser module."""
         
-        @blueprint.route(f"/modules/{module_name}/images/<path:filename>", methods=['GET'])
-        def serve_image(filename):           
+        @blueprint.route(f"/modules/{self.module_name}/images/<path:filename>", methods=['GET'])
+        def serve_image(filename):
             return send_from_directory(self.storage_path, filename)
 
 # Register handlers dynamically
-RecordContentHandler.register_handler("Markdown", RawHandler())
-RecordContentHandler.register_handler("ImageBrowser", ImageBrowserHandler(storage_path="storage/images"))
+RecordContentHandler.register_handler(RawHandler("MarkdownPage"))
+RecordContentHandler.register_handler(RawHandler("MermaidDiagram"))
+RecordContentHandler.register_handler(ImageBrowserHandler("ImageBrowser", storage_path="storage/images"))
