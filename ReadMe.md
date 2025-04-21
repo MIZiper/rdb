@@ -11,6 +11,8 @@ Resource database, with managed scoped tag system.
 
 ## Elements
 
+There is a concept description [here](./doc/concepts/ReadMe.md) (in Chinese).
+
 ### Scoped tag
 
 Scoped tag is under user's management, and can be used to filter resources.
