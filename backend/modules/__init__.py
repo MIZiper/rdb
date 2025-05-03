@@ -45,7 +45,11 @@ class RawHandler(RecordContentHandler):
 class JsonHandler(RecordContentHandler):
     # store json string into sqlite
     # and return content as json
-    pass
+    def to_client(self, content: str) -> dict | list:
+        return json.loads(content)
+
+    def to_database(self, content: dict | list) -> str:
+        return json.dumps(content)
 
 class ImageBrowserHandler(RecordContentHandler):
     def __init__(self, module_name: str, storage_path: str):
