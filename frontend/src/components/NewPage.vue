@@ -86,8 +86,9 @@ export default {
             const response = await apiClient.post('/resources', preparedContent, {
               headers: { 'Content-Type': 'multipart/form-data' },
             });
-            if (response.status === 200) {
+            if (response.status === 201) {
               console.log('Resource created successfully');
+              this.$router.push(`/resources/${response.data.uuid}`); // Navigate to the new resource
             }
           } catch (error) {
             console.error('Error creating resource', error);
@@ -99,8 +100,9 @@ export default {
 
           try {
             const response = await apiClient.post('/resources', this.resource);
-            if (response.status === 200) {
+            if (response.status === 201) {
               console.log('Resource created successfully');
+              this.$router.push(`/resources/${response.data.uuid}`); // Navigate to the new resource
             }
           } catch (error) {
             console.error('Error creating resource', error);
