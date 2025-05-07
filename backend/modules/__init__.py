@@ -34,12 +34,15 @@ class RecordContentHandler:
     def get_handler(module_name: str):
         handler = RecordContentHandler._registry.get(module_name)
         if handler is None:
-            raise ValueError(f"No handler registered for module: {module_name}")
+            return RawHandler("Unhandled")
         return handler
 
 class RawHandler(RecordContentHandler):
     # store raw string into sqlite
     # and return raw string as well
+
+    # TODO: to_database() for unhandled case with non-string content
+
     pass
 
 class JsonHandler(RecordContentHandler):

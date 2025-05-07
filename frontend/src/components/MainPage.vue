@@ -16,6 +16,7 @@ import ContentInfoCard from './ContentInfoCard.vue';
 import MarkdownPage from '../modules/MarkdownPage.vue';
 import MermaidDiagram from '../modules/MermaidDiagram.vue';
 import ImageBrowser from '../modules/ImageBrowser.vue';
+import Unhandled from '../modules/Unhandled.vue';
 import { apiClient } from '../config';
 
 export default {
@@ -24,6 +25,7 @@ export default {
     MarkdownPage,
     MermaidDiagram,
     ImageBrowser,
+    Unhandled
   },
   data() {
     return {

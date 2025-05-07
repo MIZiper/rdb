@@ -61,6 +61,7 @@ def show_resource(resource: str):
 
     rec_dict = controller.to_detail_dict(record)
     rec_dict['content'] = content
+    rec_dict['module'] = handler.module_name
 
     return jsonify(rec_dict)
 
